@@ -10,7 +10,7 @@
 
     "modules-center": [
         "custom/apps",
-        "custom/firefox", "custom/files", "custom/terminal", "custom/monitor", "custom/editor",
+        "custom/firefox", "custom/files", "custom/terminal", "custom/monitor", "custom/editor", "custom/settings",
         "wlr/taskbar"
     ],
 
@@ -21,6 +21,7 @@
     "custom/terminal": { "format": "", "tooltip-format": "Terminal",      "on-click": "kitty" },
     "custom/monitor":  { "format": "󰓅", "tooltip-format": "Mission Center", "on-click": "missioncenter" },
     "custom/editor":   { "format": "󰷈", "tooltip-format": "Text Editor",   "on-click": "gnome-text-editor" },
+    "custom/settings": { "format": "", "tooltip-format": "Settings",      "on-click": "reqrium-settings" },
 
     // icons of the apps that are open right now
     "wlr/taskbar": {

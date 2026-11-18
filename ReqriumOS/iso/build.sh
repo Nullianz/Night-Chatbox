@@ -95,6 +95,9 @@ fi
 ZLOGIN
 touch "$LIVE_HOME/.zshrc"
 
+# The ReqriumOS apps (Settings works on the live USB too)
+sh "$ROOT/system/install-apps.sh" "$ROOT" "$A"
+
 # Keep the live app grid clean too
 sh "$ROOT/system/hide-apps.sh" "$ROOT/system/hidden-apps.txt" "$A"
 

@@ -114,6 +114,9 @@ install -Dm644 "$SRC/system/zram-generator.conf" /etc/systemd/zram-generator.con
 install -Dm755 "$SRC/system/reqrium-session"   /usr/local/bin/reqrium-session
 install -Dm644 "$SRC/system/reqrium.desktop"   /usr/share/wayland-sessions/reqrium.desktop
 
+# The ReqriumOS apps: Welcome and Settings
+sh "$SRC/system/install-apps.sh" "$SRC"
+
 # Keep the app grid clean
 sh "$SRC/system/hide-apps.sh" "$SRC/system/hidden-apps.txt"
 

@@ -62,6 +62,7 @@
         { "label": "󰹑", "command": "sh -c 'swaync-client -cp; sleep 0.4; ~/.config/reqrium/scripts/screenshot.sh region'" },
         { "label": "󰈋", "command": "sh -c 'swaync-client -cp; hyprpicker -a'" },
         { "label": "󰸉", "command": "sh -c '~/.config/reqrium/scripts/wallpaper.sh next'" },
+        { "label": "", "command": "sh -c 'swaync-client -cp; reqrium-settings'" },
         { "label": "⏻", "command": "sh -c 'swaync-client -cp; ~/.config/reqrium/scripts/powermenu.sh'" }
       ]
     }

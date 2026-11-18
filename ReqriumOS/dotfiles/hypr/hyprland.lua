@@ -24,6 +24,10 @@ local lite = os.getenv("REQRIUM_LITE") == "1"
 -- never auto-lock (you could not unlock it again).
 local live = os.getenv("REQRIUM_LIVE") == "1"
 
+-- Options the Settings app can change (it writes hypr/reqrium-settings.lua,
+-- which is loaded at the end of this file)
+reqrium = reqrium or { dock = true }
+
 -- Blur variants, in Hyprland's order. "acrylic" gives refraction, a lens
 -- bulge at the edges and a hint of chromatic aberration: liquid glass.
 local BLUR = { kawase = 0, frost = 1, ripple = 2, drops = 3, water = 4,
@@ -43,7 +47,8 @@ hl.on("hyprland.start", function()
     hl.exec_cmd("waybar")
     hl.exec_cmd("swaync")                      -- Control Center + notifications
     hl.exec_cmd("swayosd-server")              -- glass volume/brightness pop-ups
-    hl.exec_cmd(scripts .. "/dock.sh")         -- glass dock
+    if reqrium.dock ~= false then hl.exec_cmd(scripts .. "/dock.sh") end   -- glass dock
+    if not live then hl.exec_cmd("reqrium-welcome --autostart") end       -- first-login tour
     if not live then hl.exec_cmd("hypridle") end   -- dim, lock and sleep when idle
     hl.exec_cmd("systemctl --user start hyprpolkitagent")
     hl.exec_cmd("nm-applet --indicator")
@@ -208,6 +213,15 @@ for _, ns in ipairs({ "waybar", "rofi", "swaync-control-center", "swaync-notific
     })
 end
 
+-- The Welcome and Settings apps float in the middle of the screen
+hl.window_rule({
+    name  = "reqrium-apps-float",
+    match = { class = "^(org\\.reqrium\\.(Welcome|Settings))$" },
+    float = true,
+    size  = "980 660",
+    center = true,
+})
+
 -- Video players stay fully opaque
 hl.window_rule({
     name  = "opaque-video",
@@ -246,6 +260,7 @@ hl.bind(key("W"),      hl.dsp.exec_cmd(scripts .. "/wallpaper.sh next"))
 hl.bind(key("C"),      hl.dsp.exec_cmd("cliphist list | rofi -dmenu -theme ~/.config/rofi/glass.rasi | cliphist decode | wl-copy"))
 hl.bind(key("SHIFT + E"), hl.dsp.exec_cmd(scripts .. "/powermenu.sh"))
 hl.bind(key("A"),         hl.dsp.exec_cmd("rofi -show drun -theme ~/.config/rofi/grid.rasi"))
+hl.bind(key("comma"),     hl.dsp.exec_cmd("reqrium-settings"))
 hl.bind(key("N"),         hl.dsp.exec_cmd("swaync-client -t -sw"))
 hl.bind(key("SHIFT + C"), hl.dsp.exec_cmd("hyprpicker -a"))
 hl.bind(key("SHIFT + S"), hl.dsp.exec_cmd(scripts .. "/screenshot.sh region"))
@@ -286,6 +301,9 @@ hl.bind("XF86MonBrightnessDown", hl.dsp.exec_cmd(osd .. "--brightness lower"), h
 hl.bind("XF86AudioPlay", hl.dsp.exec_cmd(osd .. "--playerctl play-pause"), { locked = true })
 hl.bind("XF86AudioNext", hl.dsp.exec_cmd(osd .. "--playerctl next"),       { locked = true })
 hl.bind("XF86AudioPrev", hl.dsp.exec_cmd(osd .. "--playerctl prev"),       { locked = true })
+
+-- Choices made in the Settings app (overrides the defaults above)
+pcall(require, "reqrium-settings")
 
 -- Extra settings for the live USB (opens the installer); absent elsewhere
 pcall(require, "live")

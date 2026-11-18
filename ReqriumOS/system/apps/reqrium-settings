@@ -1,0 +1,463 @@
+#!/usr/bin/env python3
+"""ReqriumOS Settings: change the look and behaviour of the desktop."""
+
+import os
+import platform
+import re
+import shutil
+import sys
+
+sys.path.insert(0, "/usr/lib/reqriumos")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+import reqriumui as ui  # noqa: E402
+from reqriumui import Adw, Gtk  # noqa: E402
+from gi.repository import Gio, GLib  # noqa: E402
+
+APP_ID = "org.reqrium.Settings"
+
+
+def row_with_button(title, subtitle, label, callback, icon=None):
+    row = Adw.ActionRow(title=title, subtitle=subtitle or "")
+    if icon:
+        row.add_prefix(Gtk.Image.new_from_icon_name(icon))
+    btn = Gtk.Button(label=label, valign=Gtk.Align.CENTER)
+    btn.add_css_class("pill")
+    btn.connect("clicked", lambda *_: callback())
+    row.add_suffix(btn)
+    return row
+
+
+class SettingsWindow(Adw.ApplicationWindow):
+    def __init__(self, app, start_page=None):
+        super().__init__(application=app, title="Settings")
+        self.set_default_size(980, 660)
+        self.s = ui.load_settings()
+        self.toasts = Adw.ToastOverlay()
+
+        self.stack = Gtk.Stack(transition_type=Gtk.StackTransitionType.CROSSFADE)
+        pages = [
+            ("appearance", "Appearance", "preferences-desktop-wallpaper-symbolic", self.page_appearance),
+            ("effects", "Effects & motion", "applications-graphics-symbolic", self.page_effects),
+            ("dock", "Dock & panel", "view-app-grid-symbolic", self.page_dock),
+            ("display", "Display", "video-display-symbolic", self.page_display),
+            ("network", "Network & Bluetooth", "network-wireless-symbolic", self.page_network),
+            ("sound", "Sound", "audio-volume-high-symbolic", self.page_sound),
+            ("power", "Power", "battery-full-symbolic", self.page_power),
+            ("keyboard", "Keyboard", "input-keyboard-symbolic", self.page_keyboard),
+            ("about", "About", "help-about-symbolic", self.page_about),
+        ]
+
+        sidebar_list = Gtk.ListBox(selection_mode=Gtk.SelectionMode.SINGLE)
+        sidebar_list.add_css_class("navigation-sidebar")
+        for key, title, icon, builder in pages:
+            self.stack.add_named(builder(), key)
+            box = Gtk.Box(spacing=12, margin_top=8, margin_bottom=8, margin_start=6)
+            box.append(Gtk.Image.new_from_icon_name(icon))
+            box.append(Gtk.Label(label=title, xalign=0))
+            r = Gtk.ListBoxRow(child=box)
+            r.page_key = key
+            r.page_title = title
+            sidebar_list.append(r)
+        sidebar_list.connect("row-selected", self.on_page)
+
+        side_tv = Adw.ToolbarView()
+        side_header = Adw.HeaderBar(show_title=True)
+        side_header.set_title_widget(Gtk.Label(label="◈  Settings", css_classes=["heading"]))
+        side_tv.add_top_bar(side_header)
+        side_tv.set_content(Gtk.ScrolledWindow(child=sidebar_list,
+                                               hscrollbar_policy=Gtk.PolicyType.NEVER))
+
+        self.content_title = Adw.WindowTitle(title="Appearance")
+        content_tv = Adw.ToolbarView()
+        content_header = Adw.HeaderBar()
+        content_header.set_title_widget(self.content_title)
+        content_tv.add_top_bar(content_header)
+        content_tv.set_content(self.stack)
+
+        split = Adw.NavigationSplitView(
+            sidebar=Adw.NavigationPage(child=side_tv, title="Settings"),
+            content=Adw.NavigationPage(child=content_tv, title="Settings"),
+        )
+        split.set_min_sidebar_width(240)
+        self.toasts.set_child(split)
+        self.set_content(self.toasts)
+
+        index = [p[0] for p in pages].index(start_page) if start_page in [p[0] for p in pages] else 0
+        sidebar_list.select_row(sidebar_list.get_row_at_index(index))
+
+    # ------------------------------------------------------------ helpers --
+    def on_page(self, _lb, row):
+        if row:
+            self.stack.set_visible_child_name(row.page_key)
+            self.content_title.set_title(row.page_title)
+
+    def toast(self, text):
+        self.toasts.add_toast(Adw.Toast(title=text, timeout=2))
+
+    def apply(self, message=None):
+        ui.apply_settings(self.s)
+        if message:
+            self.toast(message)
+
+    def page(self, *groups):
+        page = Adw.PreferencesPage()
+        for g in groups:
+            page.add(g)
+        return page
+
+    def switch_row(self, title, subtitle, key, message):
+        row = Adw.SwitchRow(title=title, subtitle=subtitle)
+        row.set_active(bool(self.s[key]))
+
+        def changed(r, _p):
+            self.s[key] = r.get_active()
+            self.apply(message)
+        row.connect("notify::active", changed)
+        return row
+
+    # --------------------------------------------------------- appearance --
+    def page_appearance(self):
+        walls = Adw.PreferencesGroup(title="Wallpaper",
+                                     description="Pick a wallpaper. It ripples in from your cursor.")
+        self.wall_box = Gtk.FlowBox(selection_mode=Gtk.SelectionMode.NONE, max_children_per_line=4,
+                                    min_children_per_line=2, column_spacing=12, row_spacing=12,
+                                    homogeneous=True, halign=Gtk.Align.START)
+        walls.add(self.wall_box)
+        add = Gtk.Button(label="Add wallpaper…", halign=Gtk.Align.START, margin_top=12)
+        add.add_css_class("pill")
+        add.connect("clicked", self.add_wallpaper)
+        walls.add(add)
+        self.fill_wallpapers()
+
+        glass = Adw.PreferencesGroup(title="Glass",
+                                     description="How windows, the panel and menus look.")
+        style = Adw.ComboRow(title="Glass style",
+                             subtitle="Liquid glass bends the background through curved edges")
+        style.set_model(Gtk.StringList.new([label for _, label, _ in GLASS_STYLES_UI]))
+        keys = [k for k, _, _ in GLASS_STYLES_UI]
+        style.set_selected(keys.index(self.s["glass"]) if self.s["glass"] in keys else 0)
+
+        def style_changed(r, _p):
+            self.s["glass"] = keys[r.get_selected()]
+            self.apply(f"Glass style: {GLASS_STYLES_UI[r.get_selected()][1]}")
+        style.connect("notify::selected", style_changed)
+        glass.add(style)
+
+        glass.add(self.scale_row("See-through", "How much of the background shows through windows",
+                                 "opacity", 0.6, 1.0, 0.02, invert=True))
+        glass.add(self.scale_row("Corner roundness", "Rounded corners on windows",
+                                 "rounding", 0, 28, 1))
+        return self.page(walls, glass)
+
+    def scale_row(self, title, subtitle, key, lo, hi, step, invert=False):
+        row = Adw.ActionRow(title=title, subtitle=subtitle)
+        adj = Gtk.Adjustment(lower=lo, upper=hi, step_increment=step,
+                             value=(lo + hi - self.s[key]) if invert else self.s[key])
+        scale = Gtk.Scale(adjustment=adj, draw_value=False, hexpand=True, width_request=220,
+                          valign=Gtk.Align.CENTER)
+        state = {"id": None}
+
+        def commit():
+            v = adj.get_value()
+            self.s[key] = round((lo + hi - v) if invert else v, 2)
+            if key == "rounding":
+                self.s[key] = int(self.s[key])
+            self.apply()
+            state["id"] = None
+            return False
+
+        def changed(_a):
+            # wait until the slider stops moving before reloading the desktop
+            if state["id"]:
+                GLib.source_remove(state["id"])
+            state["id"] = GLib.timeout_add(350, commit)
+        adj.connect("value-changed", changed)
+        row.add_suffix(scale)
+        return row
+
+    def fill_wallpapers(self):
+        child = self.wall_box.get_first_child()
+        while child:
+            nxt = child.get_next_sibling()
+            self.wall_box.remove(child)
+            child = nxt
+        state_file = os.path.join(os.path.expanduser("~/.local/state/reqrium"), "wallpaper")
+        try:
+            current = open(state_file).read().strip()
+        except OSError:
+            current = ""
+        os.makedirs(ui.WALLPAPERS, exist_ok=True)
+        for name in sorted(os.listdir(ui.WALLPAPERS)):
+            path = os.path.join(ui.WALLPAPERS, name)
+            if not re.search(r"\.(png|jpe?g|webp|gif)$", name, re.I):
+                continue
+            pic = Gtk.Picture.new_for_filename(path)
+            pic.set_content_fit(Gtk.ContentFit.COVER)
+            pic.set_can_shrink(True)
+            pic.set_size_request(176, 99)
+            btn = Gtk.Button(child=pic, tooltip_text=name, hexpand=False, halign=Gtk.Align.START)
+            btn.add_css_class("flat")
+            btn.add_css_class("wallpaper-tile")
+            if path == current:
+                btn.add_css_class("current")
+            btn.connect("clicked", self.set_wallpaper, path)
+            self.wall_box.append(btn)
+
+    def set_wallpaper(self, _btn, path):
+        ui.run([os.path.join(ui.SCRIPTS, "wallpaper.sh"), "set", path])
+        self.toast("Wallpaper changed")
+        GLib.timeout_add(600, lambda: (self.fill_wallpapers(), False)[1])
+
+    def add_wallpaper(self, _btn):
+        dialog = Gtk.FileDialog(title="Choose a wallpaper")
+        filt = Gtk.FileFilter(name="Images")
+        for pat in ("*.png", "*.jpg", "*.jpeg", "*.webp", "*.gif"):
+            filt.add_pattern(pat)
+        store = Gio.ListStore.new(Gtk.FileFilter)
+        store.append(filt)
+        dialog.set_filters(store)
+
+        def done(d, res):
+            try:
+                f = d.open_finish(res)
+            except GLib.Error:
+                return
+            src = f.get_path()
+            dst = os.path.join(ui.WALLPAPERS, os.path.basename(src))
+            shutil.copy(src, dst)
+            self.set_wallpaper(None, dst)
+        dialog.open(self, None, done)
+
+    # ------------------------------------------------------------ effects --
+    def page_effects(self):
+        g = Adw.PreferencesGroup(title="Motion",
+                                 description="Turn these off for a calmer desktop or slower computers.")
+        g.add(self.switch_row("Animations", "Windows pop in, workspaces glide, menus float",
+                              "animations", "Animations updated"))
+        g.add(self.switch_row("Jelly windows", "Windows wobble while you drag them",
+                              "wobble", "Window wobble updated"))
+        g.add(self.switch_row("Motion blur", "Moving windows leave a soft blur trail",
+                              "motion_blur", "Motion blur updated"))
+        return self.page(g)
+
+    # --------------------------------------------------------------- dock --
+    def page_dock(self):
+        g = Adw.PreferencesGroup(title="Dock")
+        row = Adw.SwitchRow(title="Show the dock", subtitle="The glass bar of apps at the bottom")
+        row.set_active(bool(self.s["dock"]))
+
+        def changed(r, _p):
+            self.s["dock"] = r.get_active()
+            ui.save_settings(self.s)
+            ui.write_hypr_settings(self.s)
+            ui.run(["pkill", "-f", "waybar -c .*dock.jsonc"], wait=True)
+            if self.s["dock"]:
+                ui.run([os.path.join(ui.SCRIPTS, "dock.sh")])
+            self.toast("Dock shown" if self.s["dock"] else "Dock hidden")
+        row.connect("notify::active", changed)
+        g.add(row)
+        g.add(row_with_button("Pinned apps", "Edit which apps are pinned to the dock", "Edit",
+                              lambda: ui.run(["gnome-text-editor",
+                                              os.path.expanduser("~/.config/waybar/dock.jsonc")])))
+        p = Adw.PreferencesGroup(title="Panel")
+        p.add(row_with_button("Restart the panel", "Reload the top bar and dock after editing them",
+                              "Restart", self.restart_bars))
+        return self.page(g, p)
+
+    def restart_bars(self):
+        ui.run(["pkill", "waybar"], wait=True)
+        ui.run(["waybar"])
+        if self.s["dock"]:
+            ui.run([os.path.join(ui.SCRIPTS, "dock.sh")])
+        self.toast("Panel restarted")
+
+    # ------------------------------------------------------------ display --
+    def page_display(self):
+        g = Adw.PreferencesGroup(title="Screen")
+        scales = ["auto", "1", "1.25", "1.5", "1.75", "2"]
+        labels = ["Automatic", "100%", "125%", "150%", "175%", "200%"]
+        row = Adw.ComboRow(title="Scale", subtitle="Make everything bigger on high-resolution screens")
+        row.set_model(Gtk.StringList.new(labels))
+        cur = str(self.s.get("scale", "auto"))
+        row.set_selected(scales.index(cur) if cur in scales else 0)
+
+        def changed(r, _p):
+            self.s["scale"] = scales[r.get_selected()]
+            self.apply(f"Scale: {labels[r.get_selected()]}")
+        row.connect("notify::selected", changed)
+        g.add(row)
+        if ui.have("nwg-displays"):
+            g.add(row_with_button("Arrange displays",
+                                  "Resolution, refresh rate and multiple monitors",
+                                  "Open", lambda: ui.run(["nwg-displays"])))
+        return self.page(g)
+
+    # ------------------------------------------------------------ network --
+    def page_network(self):
+        g = Adw.PreferencesGroup(title="Wi-Fi")
+        wifi = Adw.SwitchRow(title="Wi-Fi")
+        wifi.set_active("enabled" in ui.run(["nmcli", "radio", "wifi"], wait=True))
+        wifi.connect("notify::active",
+                     lambda r, _p: ui.run(["nmcli", "radio", "wifi", "on" if r.get_active() else "off"]))
+        g.add(wifi)
+        g.add(row_with_button("Networks", "Join Wi-Fi, VPN and wired connections", "Open",
+                              lambda: ui.run(["nm-connection-editor"])))
+        b = Adw.PreferencesGroup(title="Bluetooth")
+        bt = Adw.SwitchRow(title="Bluetooth")
+        bt.set_active("Powered: yes" in ui.run(["bluetoothctl", "show"], wait=True))
+        bt.connect("notify::active",
+                   lambda r, _p: ui.run(["bluetoothctl", "power", "on" if r.get_active() else "off"]))
+        b.add(bt)
+        b.add(row_with_button("Devices", "Pair headphones, mice, keyboards and phones", "Open",
+                              lambda: ui.run(["blueman-manager"])))
+        return self.page(g, b)
+
+    # -------------------------------------------------------------- sound --
+    def page_sound(self):
+        g = Adw.PreferencesGroup(title="Output")
+        out = ui.run(["wpctl", "get-volume", "@DEFAULT_AUDIO_SINK@"], wait=True)
+        m = re.search(r"([0-9.]+)", out or "")
+        vol = float(m.group(1)) if m else 0.5
+        row = Adw.ActionRow(title="Volume")
+        adj = Gtk.Adjustment(lower=0, upper=1, step_increment=0.05, value=min(vol, 1.0))
+        scale = Gtk.Scale(adjustment=adj, draw_value=False, hexpand=True, width_request=260,
+                          valign=Gtk.Align.CENTER)
+        adj.connect("value-changed", lambda a: ui.run(
+            ["wpctl", "set-volume", "@DEFAULT_AUDIO_SINK@", f"{a.get_value():.2f}"]))
+        row.add_suffix(scale)
+        g.add(row)
+        g.add(row_with_button("Sound mixer", "Choose speakers, microphones and per-app volume",
+                              "Open", lambda: ui.run(["pavucontrol"])))
+        return self.page(g)
+
+    # -------------------------------------------------------------- power --
+    def page_power(self):
+        g = Adw.PreferencesGroup(title="Power mode")
+        modes = ["power-saver", "balanced", "performance"]
+        labels = ["Battery saver", "Balanced", "Performance"]
+        row = Adw.ComboRow(title="Mode", subtitle="Trade speed for battery life")
+        row.set_model(Gtk.StringList.new(labels))
+        cur = (ui.run(["powerprofilesctl", "get"], wait=True) or "balanced").strip()
+        row.set_selected(modes.index(cur) if cur in modes else 1)
+        row.connect("notify::selected", lambda r, _p: (
+            ui.run(["powerprofilesctl", "set", modes[r.get_selected()]]),
+            self.toast(f"Power mode: {labels[r.get_selected()]}")))
+        g.add(row)
+        return self.page(g)
+
+    # ----------------------------------------------------------- keyboard --
+    def page_keyboard(self):
+        g = Adw.PreferencesGroup(title="Layout",
+                                 description="Keyboard layout codes, e.g. us, gb, de, fr. "
+                                             "Several are separated by commas.")
+        row = Adw.EntryRow(title="Keyboard layout", show_apply_button=True)
+        row.set_text(self.s.get("kb_layout") or "")
+
+        def applied(r):
+            self.s["kb_layout"] = r.get_text().strip()
+            self.apply("Keyboard layout updated")
+        row.connect("apply", applied)
+        g.add(row)
+        k = Adw.PreferencesGroup(title="Shortcuts")
+        for keys, what in SHORTCUTS:
+            r = Adw.ActionRow(title=what)
+            r.add_suffix(Gtk.Label(label=keys, css_classes=["keycap"], valign=Gtk.Align.CENTER))
+            k.add(r)
+        return self.page(g, k)
+
+    # -------------------------------------------------------------- about --
+    def page_about(self):
+        top = Adw.PreferencesGroup()
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8, margin_top=12,
+                      margin_bottom=12, halign=Gtk.Align.CENTER)
+        box.append(ui.logo_widget(112))
+        box.append(Gtk.Label(label="ReqriumOS", css_classes=["hero-title"]))
+        box.append(Gtk.Label(label="Liquid glass, on Arch Linux", css_classes=["hero-sub"]))
+        top.add(box)
+
+        info = Adw.PreferencesGroup(title="This computer")
+        for title, value in system_info():
+            r = Adw.ActionRow(title=title, subtitle=value)
+            r.add_css_class("property")
+            info.add(r)
+
+        up = Adw.PreferencesGroup(title="Updates")
+        up.add(row_with_button(
+            "Update everything", "System packages, AUR apps and Flatpak apps", "Update",
+            lambda: ui.in_terminal("Updating ReqriumOS",
+                                   "sudo pacman -Syu; command -v paru >/dev/null && paru -Sua; "
+                                   "flatpak update -y")))
+        up.add(row_with_button("Welcome tour", "Show the welcome app again", "Open",
+                               lambda: ui.run(["reqrium-welcome"])))
+        return self.page(top, info, up)
+
+
+GLASS_STYLES_UI = ui.GLASS_STYLES
+
+SHORTCUTS = [
+    ("SUPER + Space", "Search apps"),
+    ("SUPER + A", "App grid"),
+    ("SUPER + N", "Control Center"),
+    ("SUPER + Return", "Terminal"),
+    ("SUPER + B", "Firefox"),
+    ("SUPER + E", "Files"),
+    ("SUPER + D", "Close window"),
+    ("SUPER + F", "Fullscreen"),
+    ("SUPER + 1…9", "Switch workspace"),
+    ("SUPER + SHIFT + S", "Screenshot an area"),
+    ("SUPER + L", "Lock"),
+    ("SUPER + SHIFT + E", "Power menu"),
+]
+
+
+def system_info():
+    info = []
+    try:
+        osr = dict(line.strip().split("=", 1) for line in open("/etc/os-release") if "=" in line)
+        info.append(("System", osr.get("PRETTY_NAME", "ReqriumOS").strip('"')))
+    except OSError:
+        info.append(("System", "ReqriumOS"))
+    info.append(("Computer name", platform.node()))
+    info.append(("Kernel", platform.release()))
+    try:
+        cpu = next(line.split(":", 1)[1].strip() for line in open("/proc/cpuinfo")
+                   if line.startswith("model name"))
+        info.append(("Processor", f"{cpu} ({os.cpu_count()} threads)"))
+    except (OSError, StopIteration):
+        pass
+    try:
+        kb = int(next(line.split()[1] for line in open("/proc/meminfo")
+                      if line.startswith("MemTotal")))
+        info.append(("Memory", f"{kb / 1024 / 1024:.1f} GB"))
+    except (OSError, StopIteration, ValueError):
+        pass
+    gpus = [line.split(": ", 1)[-1] for line in ui.run(["lspci"], wait=True).splitlines()
+            if re.search(r"VGA|3D|Display", line)]
+    if gpus:
+        info.append(("Graphics", "; ".join(gpus)))
+    du = shutil.disk_usage("/")
+    info.append(("Disk", f"{du.used / 1e9:.0f} GB used of {du.total / 1e9:.0f} GB"))
+    return info
+
+
+class SettingsApp(Adw.Application):
+    def __init__(self):
+        super().__init__(application_id=APP_ID,
+                         flags=Gio.ApplicationFlags.HANDLES_COMMAND_LINE)
+        self.page = None
+
+    def do_command_line(self, cmd):
+        args = cmd.get_arguments()[1:]
+        self.page = args[0] if args else None
+        self.activate()
+        return 0
+
+    def do_activate(self):
+        ui.setup_style()
+        win = self.props.active_window or SettingsWindow(self, self.page)
+        win.present()
+
+
+if __name__ == "__main__":
+    sys.exit(SettingsApp().run(sys.argv))

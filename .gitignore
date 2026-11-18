@@ -1,1 +1,3 @@
 ReqriumOS/out/
+__pycache__/
+*.pyc

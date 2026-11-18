@@ -104,6 +104,7 @@ always produce the same system.
 | `SUPER + Space` | App search |
 | `SUPER + A` | App grid |
 | `SUPER + N` | Control Center |
+| `SUPER + ,` | Settings |
 | `SUPER + SHIFT + C` | Colour picker |
 | `SUPER + Return` | Terminal |
 | `SUPER + E` | Files |

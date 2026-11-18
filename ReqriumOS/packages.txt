@@ -48,7 +48,14 @@ gnome-calendar
 pavucontrol
 blueman
 
-# Login screen & boot splash
+# ReqriumOS apps (Welcome, Settings) and display arrangement
+python-gobject
+gtk4
+libadwaita
+nwg-displays
+
+# Login screen, boot splash & drive encryption
+cryptsetup
 greetd
 greetd-regreet
 cage

@@ -1,0 +1,275 @@
+#!/usr/bin/env python3
+"""ReqriumOS Welcome: a short tour on first login, plus one-click apps."""
+
+import os
+import pwd
+import shlex
+import sys
+
+sys.path.insert(0, "/usr/lib/reqriumos")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+import reqriumui as ui  # noqa: E402
+from reqriumui import Adw, Gtk  # noqa: E402
+from gi.repository import Gio  # noqa: E402
+
+APP_ID = "org.reqrium.Welcome"
+
+# (name, Flathub id, icon, one-line description)
+APPS = [
+    ("Steam", "com.valvesoftware.Steam", "steam", "PC games"),
+    ("Discord", "com.discordapp.Discord", "discord", "Chat with friends"),
+    ("Spotify", "com.spotify.Client", "spotify-client", "Music"),
+    ("OBS Studio", "com.obsproject.Studio", "com.obsproject.Studio", "Record and stream"),
+    ("VLC", "org.videolan.VLC", "vlc", "Plays any video"),
+    ("GIMP", "org.gimp.GIMP", "gimp", "Edit photos"),
+    ("Prism Launcher", "org.prismlauncher.PrismLauncher", "org.prismlauncher.PrismLauncher",
+     "Minecraft"),
+    ("VS Code", "com.visualstudio.code", "com.visualstudio.code", "Write code"),
+    ("LibreOffice", "org.libreoffice.LibreOffice", "libreoffice-main", "Documents"),
+    ("Telegram", "org.telegram.desktop", "telegram", "Messaging"),
+    ("Bottles", "com.usebottles.bottles", "com.usebottles.bottles", "Run Windows apps"),
+    ("Kdenlive", "org.kde.kdenlive", "kdenlive", "Edit videos"),
+]
+
+SHORTCUTS = [
+    ("SUPER", "Space", "Search for any app"),
+    ("SUPER", "A", "See all your apps"),
+    ("SUPER", "N", "Control Center"),
+    ("SUPER", "Return", "Open a terminal"),
+    ("SUPER", "D", "Close a window"),
+    ("SUPER", "1 … 9", "Switch workspace"),
+    ("SUPER + SHIFT", "S", "Screenshot an area"),
+    ("SUPER", "L", "Lock the screen"),
+]
+
+DONE_FLAG = os.path.join(ui.CONFIG_DIR, "welcome-done")
+
+
+def first_name():
+    try:
+        gecos = pwd.getpwuid(os.getuid()).pw_gecos.split(",")[0].strip()
+        name = gecos or pwd.getpwuid(os.getuid()).pw_name
+    except KeyError:
+        name = ""
+    return name.split()[0].capitalize() if name else ""
+
+
+def centered(*widgets, spacing=14):
+    box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=spacing,
+                  valign=Gtk.Align.CENTER, halign=Gtk.Align.CENTER, hexpand=True, vexpand=True,
+                  margin_start=36, margin_end=36)
+    for w in widgets:
+        box.append(w)
+    return box
+
+
+def label(text, *classes, wrap=True):
+    lbl = Gtk.Label(label=text, wrap=wrap, justify=Gtk.Justification.CENTER)
+    for c in classes:
+        lbl.add_css_class(c)
+    return lbl
+
+
+class WelcomeWindow(Adw.ApplicationWindow):
+    def __init__(self, app):
+        super().__init__(application=app, title="Welcome to ReqriumOS")
+        self.set_default_size(880, 600)
+        self.carousel = Adw.Carousel(hexpand=True, vexpand=True, allow_scroll_wheel=True)
+        for page in (self.page_hello(), self.page_shortcuts(), self.page_apps(),
+                     self.page_style(), self.page_done()):
+            self.carousel.append(page)
+        self.carousel.connect("page-changed", self.on_page_changed)
+
+        self.back = Gtk.Button(icon_name="go-previous-symbolic", tooltip_text="Back")
+        self.back.add_css_class("circular")
+        self.back.connect("clicked", lambda *_: self.go(-1))
+        self.next = Gtk.Button(label="Next")
+        self.next.add_css_class("suggested-action")
+        self.next.add_css_class("pill")
+        self.next.connect("clicked", lambda *_: self.go(1))
+
+        dots = Adw.CarouselIndicatorDots(carousel=self.carousel)
+        bottom = Gtk.CenterBox(margin_start=24, margin_end=24, margin_bottom=20, margin_top=8)
+        bottom.set_start_widget(self.back)
+        bottom.set_center_widget(dots)
+        bottom.set_end_widget(self.next)
+
+        header = Adw.HeaderBar(show_title=False)
+        tv = Adw.ToolbarView()
+        tv.add_top_bar(header)
+        body = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        body.append(self.carousel)
+        body.append(bottom)
+        tv.set_content(body)
+        self.toasts = Adw.ToastOverlay(child=tv)
+        self.set_content(self.toasts)
+        self.on_page_changed(self.carousel, 0)
+
+    # ---------------------------------------------------------- navigation --
+    def go(self, step):
+        n = self.carousel.get_n_pages()
+        i = int(round(self.carousel.get_position())) + step
+        if i >= n:
+            self.finish()
+            return
+        if 0 <= i < n:
+            self.carousel.scroll_to(self.carousel.get_nth_page(i), True)
+
+    def on_page_changed(self, carousel, index):
+        last = index == carousel.get_n_pages() - 1
+        self.back.set_sensitive(index > 0)
+        self.next.set_label("Start using ReqriumOS" if last else "Next")
+
+    def finish(self):
+        os.makedirs(ui.CONFIG_DIR, exist_ok=True)
+        s = ui.load_settings()
+        s["show_welcome"] = self.startup_switch.get_active()
+        ui.save_settings(s)
+        if not s["show_welcome"]:
+            open(DONE_FLAG, "w").close()
+        elif os.path.exists(DONE_FLAG):
+            os.remove(DONE_FLAG)
+        self.close()
+
+    # --------------------------------------------------------------- pages --
+    def page_hello(self):
+        name = first_name()
+        title = f"Welcome to ReqriumOS, {name}" if name else "Welcome to ReqriumOS"
+        return centered(
+            ui.logo_widget(150),
+            label(title, "hero-title"),
+            label("Liquid glass, on Arch Linux.\nLet's take a quick look around. "
+                  "It takes about a minute.", "hero-sub"),
+        )
+
+    def page_shortcuts(self):
+        grid = Gtk.Grid(column_spacing=18, row_spacing=12, halign=Gtk.Align.CENTER)
+        for i, (mod, key, what) in enumerate(SHORTCUTS):
+            keys = Gtk.Box(spacing=6, halign=Gtk.Align.END)
+            for part in (mod, key):
+                keys.append(label(part, "keycap", wrap=False))
+            grid.attach(keys, (i % 2) * 2, i // 2, 1, 1)
+            w = label(what, wrap=False)
+            w.set_xalign(0)
+            w.set_margin_end(30)
+            grid.attach(w, (i % 2) * 2 + 1, i // 2, 1, 1)
+        return centered(
+            label("Get around", "hero-title"),
+            label("SUPER is the Windows key. Click the ◈ in the top-left or the dock for apps, "
+                  "and the bell in the top-right for quick settings.", "hero-sub"),
+            grid,
+            spacing=20,
+        )
+
+    def page_apps(self):
+        self.app_buttons = []
+        flow = Gtk.FlowBox(selection_mode=Gtk.SelectionMode.NONE, max_children_per_line=6,
+                           min_children_per_line=6, column_spacing=10, row_spacing=10,
+                           homogeneous=True, halign=Gtk.Align.CENTER)
+        for name, app_id, icon, desc in APPS:
+            box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+            img = Gtk.Image.new_from_icon_name(icon)
+            img.set_pixel_size(44)
+            box.append(img)
+            box.append(label(name, "title", wrap=False))
+            box.append(label(desc, "dim", "caption", wrap=False))
+            btn = Gtk.ToggleButton(child=box, width_request=112)
+            btn.add_css_class("glass")
+            btn.add_css_class("app-tile")
+            btn.app_id = app_id
+            btn.app_name = name
+            self.app_buttons.append(btn)
+            flow.append(btn)
+        install = Gtk.Button(label="Install selected apps", halign=Gtk.Align.CENTER)
+        install.add_css_class("suggested-action")
+        install.add_css_class("pill")
+        install.connect("clicked", self.install_apps)
+        return centered(
+            label("Get your apps", "hero-title"),
+            label("Tap the ones you want, then Install. They come from Flathub and "
+                  "install in the background.", "hero-sub"),
+            flow, install, spacing=16,
+        )
+
+    def install_apps(self, _btn):
+        chosen = [b for b in self.app_buttons if b.get_active()]
+        if not chosen:
+            self.toasts.add_toast(Adw.Toast(title="Tap the apps you want first", timeout=2))
+            return
+        ids = " ".join(shlex.quote(b.app_id) for b in chosen)
+        names = ", ".join(b.app_name for b in chosen)
+        ui.in_terminal(
+            "Installing apps",
+            "flatpak remote-add --user --if-not-exists flathub "
+            "https://dl.flathub.org/repo/flathub.flatpakrepo && "
+            f"echo 'Installing: {names}' && flatpak install --user -y flathub {ids}")
+        for b in chosen:
+            b.set_active(False)
+        self.toasts.add_toast(Adw.Toast(title=f"Installing {names}…", timeout=3))
+
+    def page_style(self):
+        def tile(icon, title, sub, cb):
+            box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+            img = Gtk.Image.new_from_icon_name(icon)
+            img.set_pixel_size(40)
+            box.append(img)
+            box.append(label(title, "title", wrap=False))
+            box.append(label(sub, "dim", "caption"))
+            b = Gtk.Button(child=box, width_request=190)
+            b.add_css_class("glass")
+            b.add_css_class("app-tile")
+            b.connect("clicked", lambda *_: cb())
+            return b
+
+        row = Gtk.Box(spacing=14, halign=Gtk.Align.CENTER)
+        row.append(tile("preferences-desktop-wallpaper-symbolic", "Next wallpaper",
+                        "Watch it ripple in",
+                        lambda: ui.run([os.path.join(ui.SCRIPTS, "wallpaper.sh"), "next"])))
+        row.append(tile("applications-graphics-symbolic", "Glass style",
+                        "Liquid, frosted, water…", lambda: ui.run(["reqrium-settings", "appearance"])))
+        row.append(tile("preferences-system-symbolic", "All settings",
+                        "Display, sound, power…", lambda: ui.run(["reqrium-settings"])))
+        return centered(
+            label("Make it yours", "hero-title"),
+            label("Change the wallpaper, pick a glass style, or open Settings any time "
+                  "from the app grid.", "hero-sub"),
+            row, spacing=20,
+        )
+
+    def page_done(self):
+        self.startup_switch = Gtk.Switch(valign=Gtk.Align.CENTER)
+        self.startup_switch.set_active(False)
+        sw_row = Gtk.Box(spacing=12, halign=Gtk.Align.CENTER)
+        sw_row.append(Gtk.Label(label="Show this welcome next time I log in"))
+        sw_row.append(self.startup_switch)
+        return centered(
+            ui.logo_widget(110),
+            label("You're all set", "hero-title"),
+            label("Enjoy ReqriumOS. You can reopen this tour from Settings → About.",
+                  "hero-sub"),
+            sw_row,
+        )
+
+
+class WelcomeApp(Adw.Application):
+    def __init__(self):
+        super().__init__(application_id=APP_ID,
+                         flags=Gio.ApplicationFlags.HANDLES_COMMAND_LINE)
+        self.autostart = False
+
+    def do_command_line(self, cmd):
+        self.autostart = "--autostart" in cmd.get_arguments()
+        if self.autostart and os.path.exists(DONE_FLAG):
+            return 0          # already seen it, and asked not to show again
+        self.activate()
+        return 0
+
+    def do_activate(self):
+        ui.setup_style()
+        win = self.props.active_window or WelcomeWindow(self)
+        win.present()
+
+
+if __name__ == "__main__":
+    sys.exit(WelcomeApp().run(sys.argv))

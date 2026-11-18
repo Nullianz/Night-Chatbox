@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Welcome
+GenericName=Welcome to ReqriumOS
+Comment=A quick tour, shortcuts, and one-click apps
+Exec=reqrium-welcome
+Icon=user-home
+Terminal=false
+Type=Application
+Categories=System;
+Keywords=tour;start;apps;install;shortcuts;
+StartupWMClass=org.reqrium.Welcome
