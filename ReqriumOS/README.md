@@ -3,7 +3,9 @@
 An Arch Linux based OS with a **liquid glass** desktop: frosted translucent
 windows, a floating glass panel, and soft, bouncy animations everywhere.
 
-![wallpaper](dotfiles/reqrium/wallpapers/liquid-night.png)
+![ReqriumOS desktop](docs/screenshot.png)
+
+*Booted from the ReqriumOS ISO in a VM: glass windows, the floating glass panel and fastfetch.*
 
 ## What makes it "liquid glass"
 
