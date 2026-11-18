@@ -231,6 +231,7 @@ hl.bind(key("Return"), hl.dsp.exec_cmd(terminal))
 hl.bind(key("Space"),  hl.dsp.exec_cmd(launcher))
 hl.bind(key("E"),      hl.dsp.exec_cmd(files))
 hl.bind(key("B"),      hl.dsp.exec_cmd(browser))
+hl.bind(key("D"),      hl.dsp.window.close())   -- close the focused window
 hl.bind(key("Q"),      hl.dsp.window.close())
 hl.bind(key("F"),      hl.dsp.window.fullscreen())
 hl.bind(key("V"),      hl.dsp.window.float({ action = "toggle" }))

@@ -101,7 +101,7 @@ always produce the same system.
 | `SUPER + E` | Files |
 | `SUPER + I` | Open the installer (live USB only) |
 | `SUPER + B` | Firefox |
-| `SUPER + Q` | Close window |
+| `SUPER + D` or `SUPER + Q` | Close window |
 | `SUPER + F` / `V` | Fullscreen / float |
 | `SUPER + 1…9` | Switch workspace (`+ SHIFT` moves the window) |
 | `SUPER + S` | Glass drawer (scratchpad) |
