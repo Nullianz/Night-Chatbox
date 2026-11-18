@@ -20,6 +20,10 @@ local mod      = "SUPER"
 -- lighter glass that stays smooth.
 local lite = os.getenv("REQRIUM_LITE") == "1"
 
+-- The live USB sets REQRIUM_LIVE=1. Its user has no password, so it must
+-- never auto-lock (you could not unlock it again).
+local live = os.getenv("REQRIUM_LIVE") == "1"
+
 -- Blur variants, in Hyprland's order. "acrylic" gives refraction, a lens
 -- bulge at the edges and a hint of chromatic aberration: liquid glass.
 local BLUR = { kawase = 0, frost = 1, ripple = 2, drops = 3, water = 4,
@@ -40,7 +44,7 @@ hl.on("hyprland.start", function()
     hl.exec_cmd("swaync")                      -- Control Center + notifications
     hl.exec_cmd("swayosd-server")              -- glass volume/brightness pop-ups
     hl.exec_cmd(scripts .. "/dock.sh")         -- glass dock
-    hl.exec_cmd("hypridle")
+    if not live then hl.exec_cmd("hypridle") end   -- dim, lock and sleep when idle
     hl.exec_cmd("systemctl --user start hyprpolkitagent")
     hl.exec_cmd("nm-applet --indicator")
     hl.exec_cmd("blueman-applet")

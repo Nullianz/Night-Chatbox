@@ -90,7 +90,7 @@ HYPR
 # Start the glass desktop on the first console (falls back to the shell)
 cat > "$LIVE_HOME/.zlogin" <<'ZLOGIN'
 if [ "$(tty)" = "/dev/tty1" ] && [ -z "${WAYLAND_DISPLAY:-}" ] && [ -e /dev/dri/card0 ]; then
-  reqrium-session || echo "The desktop could not start. Run: sudo reqrium-installer"
+  REQRIUM_LIVE=1 reqrium-session || echo "The desktop could not start. Run: sudo reqrium-installer"
 fi
 ZLOGIN
 touch "$LIVE_HOME/.zshrc"
