@@ -8,7 +8,7 @@ window {
     border: 0;
     border-radius: 0;
     padding: 30% 18%;
-    background-color: rgba(11, 10, 31, 45%);
+    background-color: rgba(11, 10, 31, 82%);
 }
 
 mainbox { children: [ message, listview ]; spacing: 30px; }

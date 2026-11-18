@@ -1,0 +1,23 @@
+# Launcher entries hidden from the app grid and search (developer, test
+# and settings helpers that clutter a clean desktop). They still work if
+# started directly. One .desktop file name per line.
+qv4l2.desktop
+qvidcap.desktop
+rofi.desktop
+rofi-theme-selector.desktop
+stoken-gui.desktop
+stoken-gui-small.desktop
+thunar-bulk-rename.desktop
+thunar-settings.desktop
+thunar-volman-settings.desktop
+vim.desktop
+nm-connection-editor.desktop
+lstopo.desktop
+lftp.desktop
+xgps.desktop
+xgpsspeed.desktop
+nvtop.desktop
+blueman-adapters.desktop
+xfce4-about.desktop
+btop.desktop
+org.freedesktop.Xwayland.desktop

@@ -95,6 +95,9 @@ fi
 ZLOGIN
 touch "$LIVE_HOME/.zshrc"
 
+# Keep the live app grid clean too
+sh "$ROOT/system/hide-apps.sh" "$ROOT/system/hidden-apps.txt" "$A"
+
 # Everything the disk installer copies onto the new system
 mkdir -p "$A/usr/share/reqriumos"
 cp -r "$ROOT/dotfiles" "$ROOT/system" "$ROOT/packages.txt" "$A/usr/share/reqriumos/"
