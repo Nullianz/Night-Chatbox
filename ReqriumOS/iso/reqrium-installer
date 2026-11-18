@@ -31,7 +31,7 @@ if [ -d /sys/firmware/efi ]; then BOOT_MODE=uefi; else BOOT_MODE=bios; fi
 
 # --------------------------------------------------------------- internet ---
 banner "Step 1 of 6 · Internet"
-until curl -fsS --max-time 6 -o /dev/null https://archlinux.org; do
+until curl -fs --max-time 6 -o /dev/null https://archlinux.org; do
   gum style --foreground "$RED" "No internet connection found."
   choice="$(gum choose "Set up Wi-Fi" "Try again" "Quit")"
   case "$choice" in
