@@ -22,9 +22,10 @@ name_sprite.SetX(W / 2 - name.GetWidth() / 2);
 name_sprite.SetY(H / 2 + size / 2 + H * 0.02);
 
 # three dots that ripple while the system starts
+dot_image = Image("dot.png");
 for (i = 0; i < 3; i++) {
-  dot[i] = Sprite(Image.Text("●", 0.49, 0.83, 0.99, 1, "Inter 14"));
-  dot[i].SetX(W / 2 - 30 + i * 24);
+  dot[i] = Sprite(dot_image);
+  dot[i].SetX(W / 2 - 32 + i * 24);
   dot[i].SetY(H / 2 + size / 2 + H * 0.08);
 }
 
