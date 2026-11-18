@@ -29,6 +29,8 @@ windows, a floating glass panel, and soft, bouncy animations everywhere.
 | **App grid** | Full-screen glass "launchpad" of all your apps |
 | **On-screen pop-ups** (swayosd) | Glass pills for volume and brightness changes |
 | **Login screen** (ReGreet) | Graphical frosted login card over the wallpaper |
+| **Welcome app** | A five-page glass tour on first login: shortcuts, one-click apps from Flathub (Steam, Discord, Spotify, OBS, VLC, GIMP, Minecraft, VS Code…), and personalising |
+| **Settings app** (`SUPER + ,`) | Wallpaper, glass style, see-through amount, corner roundness, animations, dock, display scale, Wi-Fi, Bluetooth, sound, power mode, keyboard layout, system info and updates |
 | **Boot splash** (Plymouth) | Pulsing glass ◈ logo with rippling dots while the system starts |
 | **awww** | Wallpapers change with a wave ripple that starts at your cursor |
 | **Firefox** | Installed by default as the web browser |
@@ -73,12 +75,20 @@ drivers, CPU microcode, and VirtualBox/QEMU/VMware guest tools.
    anything.
 
 What the installer sets up:
+- Optional **full-disk encryption** (LUKS2). You unlock it at startup with your account
+  password or a separate one, typed into the glass boot splash
 - GPT partitions: a 1 GB EFI partition (or a BIOS boot partition on older PCs)
   and a btrfs partition using the rest of the drive
 - btrfs subvolumes `@`, `@home`, `@snapshots`, `@log` and `@cache`, compressed with zstd
 - GRUB bootloader (branded ReqriumOS) with a menu for booting old snapshots
 - Your account, created in a sign-up step (username and password). That password is also
   your **sudo password** for admin tasks. There is no separate root password: the root login is locked.
+
+**Unattended install** (no questions, e.g. for scripting):
+```bash
+sudo REQRIUM_AUTO=1 DISK=/dev/nvme0n1 USERNAME=alex PASSWORD='...' \
+     ENCRYPT=yes KEYMAP=us TIMEZONE=Europe/London reqrium-installer
+```
 
 > ⚠️ The installer erases the **whole** drive you pick. Dual-booting
 > alongside Windows on the same drive is not supported yet.
