@@ -7,8 +7,8 @@ window {
     fullscreen: true;
     border: 0;
     border-radius: 0;
-    padding: 30% 18%;
-    background-color: rgba(11, 10, 31, 82%);
+    padding: 32% 8%;
+    background-color: rgba(11, 10, 31, 88%);
 }
 
 mainbox { children: [ message, listview ]; spacing: 30px; }
@@ -23,8 +23,9 @@ textbox {
 listview {
     columns: 5;
     lines: 1;
+    flow: horizontal;
+    fixed-columns: true;
     spacing: 22px;
-    layout: vertical;
     fixed-height: true;
 }
 
