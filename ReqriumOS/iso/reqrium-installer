@@ -35,6 +35,12 @@ command -v gum >/dev/null || { echo "gum is missing; this must run from the Reqr
 
 if [ -d /sys/firmware/efi ]; then BOOT_MODE=uefi; else BOOT_MODE=bios; fi
 
+# Internet check (Arch website, or Arch's main package mirror)
+online() {
+  curl -fs --max-time 6 -o /dev/null https://archlinux.org ||
+    curl -fs --max-time 6 -o /dev/null https://geo.mirror.pkgbuild.com/
+}
+
 if [ -n "${REQRIUM_AUTO:-}" ]; then
   # ---------------------------------------------------------- unattended ---
   : "${DISK:?set DISK}" "${USERNAME:?set USERNAME}" "${PASSWORD:?set PASSWORD}"
@@ -49,10 +55,6 @@ if [ -n "${REQRIUM_AUTO:-}" ]; then
 else
 # --------------------------------------------------------------- internet ---
 banner "Step 1 of 6 · Internet"
-online() {
-  curl -fs --max-time 6 -o /dev/null https://archlinux.org ||
-    curl -fs --max-time 6 -o /dev/null https://geo.mirror.pkgbuild.com/
-}
 until online; do
   gum style --foreground "$RED" "No internet connection found."
   choice="$(gum choose "Set up Wi-Fi" "Try again" "Quit")"
