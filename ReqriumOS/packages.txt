@@ -1,0 +1,50 @@
+# ReqriumOS desktop packages (official Arch repos). One per line, # = comment.
+
+# Compositor & desktop core
+hyprland
+hyprlock
+hypridle
+hyprpolkitagent
+xdg-desktop-portal-hyprland
+xdg-desktop-portal-gtk
+waybar
+rofi
+mako
+libnotify
+swww
+kitty
+thunar
+gvfs
+
+# Login
+greetd
+greetd-tuigreet
+
+# Audio, network, hardware
+pipewire
+pipewire-pulse
+wireplumber
+pavucontrol
+networkmanager
+network-manager-applet
+brightnessctl
+playerctl
+bluez
+bluez-utils
+
+# Screenshots & clipboard
+grim
+slurp
+wl-clipboard
+cliphist
+
+# Look & feel
+qt5-wayland
+qt6-wayland
+adw-gtk-theme
+papirus-icon-theme
+nwg-look
+inter-font
+ttf-jetbrains-mono-nerd
+noto-fonts
+noto-fonts-emoji

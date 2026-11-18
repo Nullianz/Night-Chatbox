@@ -1,0 +1,8 @@
+NAME="ReqriumOS"
+PRETTY_NAME="ReqriumOS"
+ID=reqriumos
+ID_LIKE=arch
+BUILD_ID=rolling
+ANSI_COLOR="38;2;125;211;252"
+HOME_URL="https://github.com/nullianz/night-chatbox"
+LOGO=reqriumos

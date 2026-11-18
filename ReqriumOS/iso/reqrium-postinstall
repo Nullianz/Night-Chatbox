@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# Run from the live ISO after archinstall finishes (target mounted at /mnt).
+# Copies the ReqriumOS desktop into the new system and sets it up.
+set -euo pipefail
+TARGET="${1:-/mnt}"
+SRC=/usr/share/reqriumos
+[ -d "$TARGET/etc" ] || { echo "No installed system found at $TARGET" >&2; exit 1; }
+
+mapfile -t pkgs < <(grep -vE '^\s*(#|$)' "$SRC/packages.txt")
+arch-chroot "$TARGET" pacman -Syu --needed --noconfirm "${pkgs[@]}"
+
+install -Dm644 "$SRC/system/greetd.toml"     "$TARGET/etc/greetd/config.toml"
+install -Dm644 "$SRC/system/os-release"      "$TARGET/etc/os-release"
+install -Dm755 "$SRC/system/reqrium-session" "$TARGET/usr/local/bin/reqrium-session"
+install -Dm644 "$SRC/system/reqrium.desktop" "$TARGET/usr/share/wayland-sessions/reqrium.desktop"
+mkdir -p "$TARGET/etc/skel/.config"
+cp -r "$SRC/dotfiles/." "$TARGET/etc/skel/.config/"
+
+# Give every existing normal user the desktop config
+for home in "$TARGET"/home/*; do
+  [ -d "$home" ] || continue
+  user="$(basename "$home")"
+  mkdir -p "$home/.config"
+  cp -rn "$SRC/dotfiles/." "$home/.config/"
+  arch-chroot "$TARGET" chown -R "$user:" "/home/$user/.config"
+done
+
+arch-chroot "$TARGET" systemctl disable display-manager.service 2>/dev/null || true
+arch-chroot "$TARGET" systemctl enable greetd.service NetworkManager.service bluetooth.service
+echo "◈ ReqriumOS installed. Reboot when ready."

@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=ReqriumOS
+Comment=ReqriumOS liquid glass desktop
+Exec=reqrium-session
+Type=Application
+DesktopNames=Hyprland
