@@ -259,6 +259,16 @@ elif [ -n "$BOOTPART" ]; then
   mount "$BOOTPART" "$MNT/boot"
 fi
 
+step "Preparing package signing keys"
+# The live USB normally sets these up at boot (pacman-init.service), but
+# that waits for the clock to sync over the internet and can still be
+# queued or running. If the Arch keys aren't there yet, do it now.
+if ! pacman-key --list-keys 2>/dev/null | grep -q "@archlinux.org"; then
+  systemctl stop pacman-init.service 2>/dev/null || true
+  pacman-key --init
+  pacman-key --populate archlinux
+fi
+
 step "Installing the base system"
 base=(base linux linux-firmware sof-firmware btrfs-progs grub sudo nano networkmanager pciutils git)
 [ "$BOOT_MODE" = uefi ] && base+=(efibootmgr)
