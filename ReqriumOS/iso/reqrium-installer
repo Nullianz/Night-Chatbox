@@ -71,17 +71,27 @@ if [ "$bytes" -lt $((20 * 1024 ** 3)) ]; then
 fi
 
 # ------------------------------------------------------------------ you ---
-banner "Step 3 of 6 · About you"
+banner "Step 3 of 6 · Create your account"
+gum style --foreground 250 --margin "0 2" \
+  "Sign up for this computer. You'll use this account to log in." \
+  "Your password is also your sudo (administrator) password: you type it" \
+  "to install apps, change system settings, or run sudo in the terminal." \
+  "There is no separate root password."
+echo
 while :; do
   USERNAME="$(ask "Username (lowercase)" "e.g. alex")"
   [[ "$USERNAME" =~ ^[a-z_][a-z0-9_-]{0,31}$ ]] && [ "$USERNAME" != root ] && break
   gum style --foreground "$RED" "Use lowercase letters, numbers, - or _, starting with a letter."
 done
 while :; do
-  PASS1="$(gum input --password --header "Password for $USERNAME" --header.foreground "$SKY" --width 50)"
-  PASS2="$(gum input --password --header "Type it again" --header.foreground "$SKY" --width 50)"
-  [ -n "$PASS1" ] && [ "$PASS1" = "$PASS2" ] && break
-  gum style --foreground "$RED" "Passwords were empty or did not match. Try again."
+  PASS1="$(gum input --password --header "Password (also your sudo password, at least 6 characters)" --header.foreground "$SKY" --width 60)"
+  if [ "${#PASS1}" -lt 6 ]; then
+    gum style --foreground "$RED" "That password is too short. Use at least 6 characters."
+    continue
+  fi
+  PASS2="$(gum input --password --header "Confirm password" --header.foreground "$SKY" --width 60)"
+  [ "$PASS1" = "$PASS2" ] && break
+  gum style --foreground "$RED" "The passwords did not match. Try again."
 done
 while :; do
   HOSTNAME_="$(ask "Computer name" "e.g. reqrium-pc" "reqrium-pc")"
@@ -115,7 +125,7 @@ EXTRAS="$(awk '{print $1}' <<<"$picked" | paste -sd, -)"
 banner "Step 6 of 6 · Ready"
 gum style --border rounded --border-foreground "$SKY" --padding "1 3" \
   "Drive:     $DISK  (EVERYTHING ON IT WILL BE ERASED)" \
-  "User:      $USERNAME" \
+  "Account:   $USERNAME  (administrator; sudo uses your password)" \
   "Computer:  $HOSTNAME_" \
   "Time zone: $TIMEZONE" \
   "Language:  ${LOCALE%% *}" \
@@ -189,7 +199,7 @@ cat > "$MNT/etc/hosts" <<EOF
 127.0.1.1   $HOSTNAME_.localdomain $HOSTNAME_
 EOF
 
-step "Creating user $USERNAME"
+step "Creating account $USERNAME"
 arch-chroot "$MNT" useradd -m -G wheel -s /bin/bash "$USERNAME"
 printf '%s:%s\n' "$USERNAME" "$PASS1" | arch-chroot "$MNT" chpasswd
 arch-chroot "$MNT" passwd -l root   # use sudo instead of a root login

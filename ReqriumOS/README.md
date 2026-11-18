@@ -55,7 +55,7 @@ drivers, CPU microcode, and VirtualBox/QEMU/VMware guest tools.
 3. Boot from the USB. The glass desktop starts with the **installer** already
    open (`SUPER + I` reopens it). Without 3D graphics you get a console
    instead; type `reqrium-installer` there.
-4. The installer walks you through 6 steps: internet, drive, your account,
+4. The installer walks you through 6 steps: internet, drive, creating your account,
    region and keyboard, optional packs, then a final summary before it erases
    anything.
 
@@ -64,7 +64,8 @@ What the installer sets up:
   and a btrfs partition using the rest of the drive
 - btrfs subvolumes `@`, `@home`, `@snapshots`, `@log` and `@cache`, compressed with zstd
 - GRUB bootloader (branded ReqriumOS) with a menu for booting old snapshots
-- Your user account with sudo. The root login is locked.
+- Your account, created in a sign-up step (username and password). That password is also
+  your **sudo password** for admin tasks. There is no separate root password: the root login is locked.
 
 > ⚠️ The installer erases the **whole** drive you pick. Dual-booting
 > alongside Windows on the same drive is not supported yet.
