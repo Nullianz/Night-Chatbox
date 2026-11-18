@@ -16,6 +16,7 @@ windows, a floating glass panel, and soft, bouncy animations everywhere.
 | **Hyprlock** | Lock screen with a big clock and a glass password field over your blurred desktop |
 | **Mako** | Glass notifications |
 | **swww** | Wallpapers change with a wave ripple that starts at your cursor |
+| **Firefox** | Installed by default as the web browser |
 | **Kitty** | Translucent terminal with the Reqrium Night colour palette and a cursor trail |
 
 ## Install
@@ -46,6 +47,7 @@ run `archinstall`, then `reqrium-postinstall`, then reboot.
 | `SUPER + Space` | App launcher |
 | `SUPER + Return` | Terminal |
 | `SUPER + E` | Files |
+| `SUPER + B` | Firefox |
 | `SUPER + Q` | Close window |
 | `SUPER + F` / `V` | Fullscreen / float |
 | `SUPER + 1…9` | Switch workspace (`+ SHIFT` moves the window) |

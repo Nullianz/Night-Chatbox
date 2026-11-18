@@ -11,6 +11,7 @@ arch-chroot "$TARGET" pacman -Syu --needed --noconfirm "${pkgs[@]}"
 
 install -Dm644 "$SRC/system/greetd.toml"     "$TARGET/etc/greetd/config.toml"
 install -Dm644 "$SRC/system/os-release"      "$TARGET/etc/os-release"
+install -Dm644 "$SRC/system/mimeapps.list"   "$TARGET/etc/xdg/mimeapps.list"
 install -Dm755 "$SRC/system/reqrium-session" "$TARGET/usr/local/bin/reqrium-session"
 install -Dm644 "$SRC/system/reqrium.desktop" "$TARGET/usr/share/wayland-sessions/reqrium.desktop"
 mkdir -p "$TARGET/etc/skel/.config"

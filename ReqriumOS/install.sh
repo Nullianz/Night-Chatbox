@@ -33,6 +33,7 @@ if [ "${1:-}" != "--no-pkgs" ]; then
   sudo systemctl disable display-manager.service 2>/dev/null || true
   sudo systemctl enable greetd.service
   sudo install -Dm644 "$HERE/system/os-release" /etc/os-release
+  sudo install -Dm644 "$HERE/system/mimeapps.list" /etc/xdg/mimeapps.list
   sudo install -Dm755 "$HERE/system/reqrium-session" /usr/local/bin/reqrium-session
   sudo install -Dm644 "$HERE/system/reqrium.desktop" /usr/share/wayland-sessions/reqrium.desktop
 fi
@@ -46,6 +47,9 @@ for dir in hypr waybar rofi kitty mako reqrium; do
   cp -r "$HERE/dotfiles/$dir" "$CONFIG/$dir"
 done
 chmod +x "$CONFIG/reqrium/scripts/"*.sh
+
+say "Setting Firefox as the default browser"
+xdg-settings set default-web-browser firefox.desktop 2>/dev/null || true
 
 say "Applying GTK dark theme"
 gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3-dark' 2>/dev/null || true
