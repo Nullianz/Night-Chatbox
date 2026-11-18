@@ -7,6 +7,14 @@ windows, a floating glass panel, and soft, bouncy animations everywhere.
 
 *Booted from the ReqriumOS ISO in a VM: glass windows, the floating glass panel and fastfetch.*
 
+| Control Center | App grid |
+|---|---|
+| ![Control Center](docs/control-center.png) | ![App grid](docs/app-grid.png) |
+| **Login screen** | **Power menu** |
+| ![Login screen](docs/login-screen.png) | ![Power menu](docs/power-menu.png) |
+
+![Dock](docs/desktop-dock.png)
+
 ## What makes it "liquid glass"
 
 | Piece | What it does |
