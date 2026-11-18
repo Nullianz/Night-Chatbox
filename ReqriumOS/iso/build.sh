@@ -33,13 +33,17 @@ sed -i \
 # Make our scripts executable inside the image
 sed -i '/^file_permissions=(/a\
   ["/usr/local/bin/reqrium-session"]="0:0:755"\
-  ["/usr/local/bin/reqrium-postinstall"]="0:0:755"\
+  ["/usr/local/bin/reqrium-installer"]="0:0:755"\
+  ["/usr/share/reqriumos/system/reqrium-configure"]="0:0:755"\
+  ["/usr/share/reqriumos/system/reqrium-session"]="0:0:755"\
   ["/root/.config/reqrium/scripts/wallpaper.sh"]="0:0:755"\
   ["/root/.config/reqrium/scripts/powermenu.sh"]="0:0:755"' \
   "$PROFILE/profiledef.sh"
 
 # --- packages -----------------------------------------------------------------
 grep -vE '^\s*(#|$)' "$ROOT/packages.txt" >> "$PROFILE/packages.x86_64"
+# Live-only extras: installer UI and graphics drivers for any GPU
+printf '%s\n' gum vulkan-radeon vulkan-intel intel-media-driver >> "$PROFILE/packages.x86_64"
 sort -u -o "$PROFILE/packages.x86_64" "$PROFILE/packages.x86_64"
 
 # --- files in the live system -------------------------------------------------
@@ -47,15 +51,23 @@ A="$PROFILE/airootfs"
 cp -r "$ROOT/iso/airootfs/." "$A/"
 install -Dm644 "$ROOT/system/os-release"      "$A/etc/os-release"
 install -Dm644 "$ROOT/system/mimeapps.list"   "$A/etc/xdg/mimeapps.list"
+install -Dm644 "$ROOT/iso/reqrium-installer.desktop" "$A/usr/share/applications/reqrium-installer.desktop"
 install -Dm755 "$ROOT/system/reqrium-session" "$A/usr/local/bin/reqrium-session"
 install -Dm644 "$ROOT/system/reqrium.desktop" "$A/usr/share/wayland-sessions/reqrium.desktop"
-install -Dm755 "$ROOT/iso/reqrium-postinstall" "$A/usr/local/bin/reqrium-postinstall"
+install -Dm755 "$ROOT/iso/reqrium-installer" "$A/usr/local/bin/reqrium-installer"
 
 # Desktop config for the live root user
 mkdir -p "$A/root/.config"
 cp -r "$ROOT/dotfiles/." "$A/root/.config/"
+# The live desktop greets you with the installer
+cat >> "$A/root/.config/hypr/hyprland.conf" <<'HYPR'
 
-# A copy of everything the post-install step needs
+# Live ISO: open the installer on start (SUPER+I reopens it)
+exec-once = sleep 2 && kitty --title "Install ReqriumOS" reqrium-installer
+bind = $mod, I, exec, kitty --title "Install ReqriumOS" reqrium-installer
+HYPR
+
+# Everything the disk installer copies onto the new system
 mkdir -p "$A/usr/share/reqriumos"
 cp -r "$ROOT/dotfiles" "$ROOT/system" "$ROOT/packages.txt" "$A/usr/share/reqriumos/"
 

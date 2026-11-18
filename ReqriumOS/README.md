@@ -19,26 +19,67 @@ windows, a floating glass panel, and soft, bouncy animations everywhere.
 | **Firefox** | Installed by default as the web browser |
 | **Kitty** | Translucent terminal with the Reqrium Night colour palette and a cursor trail |
 
+## What's included
+
+**Every install gets:** Firefox, Thunar file manager (with archive, USB-drive
+and thumbnail support), mpv, Loupe image viewer, Text Editor, btop, fastfetch
+(with a ReqriumOS logo), Bluetooth and Wi-Fi tray apps, laptop power modes in
+the panel, NTFS/exFAT drive support, Flatpak with Flathub, the **paru** AUR
+helper, a firewall (ufw, on), compressed RAM swap (zram) and **automatic
+snapshots** (snapper, with snapshots before every update, bootable from GRUB).
+
+**Picked automatically for your hardware:** NVIDIA, AMD or Intel graphics
+drivers, CPU microcode, and VirtualBox/QEMU/VMware guest tools.
+
+**Optional packs (you choose during install):**
+
+| Pack | Contents |
+|---|---|
+| `gaming` | Steam, GameMode, MangoHud, 32-bit drivers |
+| `office` | LibreOffice |
+| `printing` | CUPS printer support |
+| `dev` | VS Code, Python, Node.js |
+
 ## Install
 
-### Option A: on an existing Arch install
+### Option A: install onto a drive (the ReqriumOS ISO)
+1. On an Arch machine, build the ISO:
+   ```bash
+   sudo pacman -S archiso
+   sudo ./iso/build.sh          # writes out/reqriumos-*.iso
+   ```
+2. Write it to a USB stick (with balenaEtcher, Ventoy, or
+   `sudo dd if=out/reqriumos-*.iso of=/dev/sdX bs=4M status=progress`).
+3. Boot from the USB. The glass desktop starts with the **installer** already
+   open (`SUPER + I` reopens it). Without 3D graphics you get a console
+   instead; type `reqrium-installer` there.
+4. The installer walks you through 6 steps: internet, drive, your account,
+   region and keyboard, optional packs, then a final summary before it erases
+   anything.
+
+What the installer sets up:
+- GPT partitions: a 1 GB EFI partition (or a BIOS boot partition on older PCs)
+  and a btrfs partition using the rest of the drive
+- btrfs subvolumes `@`, `@home`, `@snapshots`, `@log` and `@cache`, compressed with zstd
+- GRUB bootloader (branded ReqriumOS) with a menu for booting old snapshots
+- Your user account with sudo. The root login is locked.
+
+> ⚠️ The installer erases the **whole** drive you pick. Dual-booting
+> alongside Windows on the same drive is not supported yet.
+
+### Option B: on an existing Arch install
 ```bash
 git clone https://github.com/nullianz/night-chatbox
 cd night-chatbox/ReqriumOS
 ./install.sh
 ```
-Your old configs are backed up to `~/.config-backup-reqrium-*`. Reboot and
-log in through the ReqriumOS greeter.
+It asks about the optional packs and backs up your old configs to
+`~/.config-backup-reqrium-*`.
 
-### Option B: build the ReqriumOS ISO
-On an Arch machine:
-```bash
-sudo pacman -S archiso
-sudo ./iso/build.sh
-```
-The ISO is written to `out/`. Boot it from a USB stick (or a VM with 3D
-acceleration) and the glass desktop starts on its own. To install it to disk:
-run `archinstall`, then `reqrium-postinstall`, then reboot.
+### How it fits together
+`system/reqrium-configure` does the actual setup (packages, drivers,
+services, snapshots, desktop config). Both installers call it, so they
+always produce the same system.
 
 ## Shortcuts
 
@@ -47,6 +88,7 @@ run `archinstall`, then `reqrium-postinstall`, then reboot.
 | `SUPER + Space` | App launcher |
 | `SUPER + Return` | Terminal |
 | `SUPER + E` | Files |
+| `SUPER + I` | Open the installer (live USB only) |
 | `SUPER + B` | Firefox |
 | `SUPER + Q` | Close window |
 | `SUPER + F` / `V` | Fullscreen / float |

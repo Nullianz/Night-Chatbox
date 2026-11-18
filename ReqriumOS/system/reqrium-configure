@@ -1,0 +1,202 @@
+#!/usr/bin/env bash
+# reqrium-configure: turn an Arch Linux system into ReqriumOS.
+#
+# Runs as root ON the system being set up: either directly on an existing
+# Arch install (install.sh calls it) or inside arch-chroot from the disk
+# installer (reqrium-installer calls it).
+#
+#   reqrium-configure --user NAME [--extras gaming,office,printing,dev]
+#                     [--src DIR] [--no-aur]
+set -euo pipefail
+
+SRC=/usr/share/reqriumos
+USER_NAME=""
+EXTRAS=""
+AUR=1
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --src)    SRC="$2"; shift 2 ;;
+    --user)   USER_NAME="$2"; shift 2 ;;
+    --extras) EXTRAS="$2"; shift 2 ;;
+    --no-aur) AUR=0; shift ;;
+    *) echo "unknown option: $1" >&2; exit 2 ;;
+  esac
+done
+
+say()  { printf '\033[1;38;5;117m◈ %s\033[0m\n' "$*"; }
+warn() { printf '\033[1;38;5;216m! %s\033[0m\n' "$*" >&2; }
+has_extra() { [[ ",$EXTRAS," == *",$1,"* ]]; }
+has_pkg()   { pacman -Qq "$1" >/dev/null 2>&1; }
+
+[ "$(id -u)" -eq 0 ] || { echo "reqrium-configure must run as root." >&2; exit 1; }
+[ -f "$SRC/packages.txt" ] || { echo "ReqriumOS files not found in $SRC" >&2; exit 1; }
+if [ -n "$USER_NAME" ] && ! id "$USER_NAME" >/dev/null 2>&1; then
+  echo "User $USER_NAME does not exist." >&2; exit 1
+fi
+
+# ------------------------------------------------------------ package list ---
+mapfile -t pkgs < <(grep -vE '^\s*(#|$)' "$SRC/packages.txt")
+lib32=(lib32-mesa)
+services=(NetworkManager bluetooth power-profiles-daemon ufw greetd)
+
+# CPU microcode
+grep -q GenuineIntel /proc/cpuinfo && pkgs+=(intel-ucode)
+grep -q AuthenticAMD /proc/cpuinfo && pkgs+=(amd-ucode)
+
+# Graphics drivers
+gpus="$(lspci -mm 2>/dev/null | grep -Ei '"(VGA|3D|Display)' || true)"
+if grep -qi nvidia <<<"$gpus"; then
+  say "NVIDIA graphics detected"
+  if has_pkg linux || ! ls /usr/lib/modules >/dev/null 2>&1; then
+    pkgs+=(nvidia-open)
+  else
+    pkgs+=(nvidia-open-dkms linux-headers)
+  fi
+  pkgs+=(nvidia-utils libva-nvidia-driver)
+  lib32+=(lib32-nvidia-utils)
+fi
+if grep -Eqi 'AMD|ATI|Radeon' <<<"$gpus"; then
+  say "AMD graphics detected"
+  pkgs+=(vulkan-radeon); lib32+=(lib32-vulkan-radeon)
+fi
+if grep -qi intel <<<"$gpus"; then
+  say "Intel graphics detected"
+  pkgs+=(vulkan-intel intel-media-driver); lib32+=(lib32-vulkan-intel)
+fi
+
+# Virtual machine guest tools
+case "$(systemd-detect-virt --vm 2>/dev/null || true)" in
+  oracle) pkgs+=(virtualbox-guest-utils); services+=(vboxservice) ;;
+  kvm|qemu) pkgs+=(qemu-guest-agent spice-vdagent) ;;
+  vmware) pkgs+=(open-vm-tools); services+=(vmtoolsd) ;;
+esac
+
+# Btrfs snapshots (only when / is btrfs)
+BTRFS=0
+if [ "$(findmnt -no FSTYPE / 2>/dev/null)" = btrfs ]; then
+  BTRFS=1
+  pkgs+=(snapper snap-pac)
+  has_pkg grub && pkgs+=(grub-btrfs inotify-tools)
+fi
+
+# Optional packs
+if has_extra gaming; then
+  say "Adding gaming pack"
+  if ! grep -q '^\[multilib\]' /etc/pacman.conf; then
+    sed -i '/^#\[multilib\]/{N;s/#//g}' /etc/pacman.conf
+  fi
+  pkgs+=(steam gamemode lib32-gamemode mangohud lib32-mangohud "${lib32[@]}")
+fi
+if has_extra office; then
+  say "Adding office pack"
+  pkgs+=(libreoffice-fresh hunspell hunspell-en_us)
+fi
+if has_extra printing; then
+  say "Adding printing pack"
+  pkgs+=(cups cups-pdf system-config-printer)
+  services+=(cups.socket)
+fi
+if has_extra dev; then
+  say "Adding developer pack"
+  pkgs+=(code python nodejs npm)
+fi
+
+say "Installing ${#pkgs[@]} packages"
+pacman -Syu --needed --noconfirm "${pkgs[@]}"
+
+# ----------------------------------------------------------- system files ---
+say "Installing ReqriumOS system files"
+install -Dm644 "$SRC/system/greetd.toml"       /etc/greetd/config.toml
+install -Dm644 "$SRC/system/os-release"        /etc/os-release
+install -Dm644 "$SRC/system/mimeapps.list"     /etc/xdg/mimeapps.list
+install -Dm644 "$SRC/system/zram-generator.conf" /etc/systemd/zram-generator.conf
+install -Dm755 "$SRC/system/reqrium-session"   /usr/local/bin/reqrium-session
+install -Dm644 "$SRC/system/reqrium.desktop"   /usr/share/wayland-sessions/reqrium.desktop
+if [ -f /etc/default/grub ]; then
+  sed -i 's/^GRUB_DISTRIBUTOR=.*/GRUB_DISTRIBUTOR="ReqriumOS"/' /etc/default/grub
+fi
+
+# Firewall: block incoming, allow outgoing (Arch's default policy), on at boot
+sed -i 's/^ENABLED=.*/ENABLED=yes/' /etc/ufw/ufw.conf
+
+# Flathub app source
+flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo \
+  || warn "Could not add Flathub (no internet?). Add it later with flatpak remote-add."
+
+# --------------------------------------------------------------- snapshots ---
+setup_snapper() {
+  [ -f /etc/snapper/configs/root ] && return 0
+  say "Setting up automatic snapshots"
+  # snapper wants to create /.snapshots itself; if the installer already
+  # mounted a dedicated @snapshots subvolume there, step around it.
+  local mounted=0
+  if mountpoint -q /.snapshots; then
+    umount /.snapshots && rmdir /.snapshots && mounted=1
+  fi
+  snapper --no-dbus -c root create-config /
+  if [ "$mounted" = 1 ]; then
+    btrfs subvolume delete /.snapshots
+    mkdir /.snapshots
+    mount /.snapshots
+  fi
+  chmod 750 /.snapshots
+  snapper --no-dbus -c root set-config \
+    ALLOW_GROUPS=wheel TIMELINE_CREATE=yes \
+    TIMELINE_LIMIT_HOURLY=5 TIMELINE_LIMIT_DAILY=7 TIMELINE_LIMIT_WEEKLY=2 \
+    TIMELINE_LIMIT_MONTHLY=0 TIMELINE_LIMIT_YEARLY=0
+}
+if [ "$BTRFS" = 1 ]; then
+  if setup_snapper; then
+    services+=(snapper-timeline.timer snapper-cleanup.timer)
+    has_pkg grub-btrfs && services+=(grub-btrfsd)
+  else
+    warn "Snapshot setup failed; the rest of ReqriumOS is unaffected."
+  fi
+fi
+
+# ---------------------------------------------------------------- services ---
+say "Enabling services"
+# greetd replaces any other login manager (SDDM, GDM, LightDM...)
+systemctl disable display-manager.service 2>/dev/null || true
+systemctl enable "${services[@]}"
+
+# ---------------------------------------------------------------- dotfiles ---
+say "Installing desktop config"
+mkdir -p /etc/skel/.config
+cp -r "$SRC/dotfiles/." /etc/skel/.config/
+chmod +x /etc/skel/.config/reqrium/scripts/*.sh
+
+if [ -n "$USER_NAME" ]; then
+  home="$(getent passwd "$USER_NAME" | cut -d: -f6)"
+  backup="$home/.config-backup-reqrium-$(date +%Y%m%d-%H%M%S)"
+  mkdir -p "$home/.config"
+  for d in "$SRC"/dotfiles/*/; do
+    name="$(basename "$d")"
+    if [ -e "$home/.config/$name" ]; then
+      mkdir -p "$backup"
+      mv "$home/.config/$name" "$backup/"
+    fi
+    cp -r "$d" "$home/.config/$name"
+  done
+  chmod +x "$home/.config/reqrium/scripts/"*.sh
+  chown -R "$USER_NAME:" "$home/.config"
+  [ -d "$backup" ] && chown -R "$USER_NAME:" "$backup" && say "Old configs saved in $backup"
+  runuser -u "$USER_NAME" -- xdg-user-dirs-update || true
+fi
+
+# ------------------------------------------------------------- AUR helper ---
+if [ "$AUR" = 1 ] && [ -n "$USER_NAME" ] && ! command -v paru >/dev/null; then
+  say "Installing paru (AUR helper)"
+  build="$(mktemp -d)"
+  chown "$USER_NAME:" "$build"
+  if runuser -u "$USER_NAME" -- bash -c \
+       "cd '$build' && git clone --depth 1 https://aur.archlinux.org/paru-bin.git && cd paru-bin && makepkg --noconfirm"; then
+    pacman -U --noconfirm "$build"/paru-bin/paru-bin-[0-9]*.pkg.tar.zst
+  else
+    warn "Could not build paru. You can install it later from the AUR."
+  fi
+  rm -rf "$build"
+fi
+
+say "ReqriumOS configuration complete"

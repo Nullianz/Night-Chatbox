@@ -1,4 +1,7 @@
-# ReqriumOS desktop packages (official Arch repos). One per line, # = comment.
+# ReqriumOS packages installed on every system (official Arch repos).
+# One per line, # = comment. Hardware-specific packages (GPU drivers,
+# CPU microcode, VM tools, snapshots) are picked automatically by
+# system/reqrium-configure, and the optional packs are defined there too.
 
 # Compositor & desktop core
 hyprland
@@ -7,31 +10,68 @@ hypridle
 hyprpolkitagent
 xdg-desktop-portal-hyprland
 xdg-desktop-portal-gtk
+xdg-user-dirs
 waybar
 rofi
 mako
 libnotify
 swww
 kitty
-thunar
 firefox
+
+# Files, drives & archives
+thunar
+thunar-archive-plugin
+thunar-volman
 gvfs
+tumbler
+ffmpegthumbnailer
+udisks2
+udiskie
+ntfs-3g
+exfatprogs
+file-roller
+unzip
+p7zip
+unrar
+
+# Everyday apps
+mpv
+loupe
+gnome-text-editor
+btop
+fastfetch
+pavucontrol
+blueman
 
 # Login
 greetd
 greetd-tuigreet
 
-# Audio, network, hardware
+# Audio, network, power, hardware
 pipewire
 pipewire-pulse
+pipewire-alsa
 wireplumber
-pavucontrol
 networkmanager
 network-manager-applet
+power-profiles-daemon
 brightnessctl
 playerctl
 bluez
 bluez-utils
+pciutils
+mesa
+sof-firmware
+
+# Performance & safety
+zram-generator
+ufw
+
+# Software sources (Flathub, and git/base-devel for the AUR helper)
+flatpak
+git
+base-devel
 
 # Screenshots & clipboard
 grim
@@ -49,3 +89,9 @@ inter-font
 ttf-jetbrains-mono-nerd
 noto-fonts
 noto-fonts-emoji
+noto-fonts-cjk
+
+# Basics
+sudo
+nano
+man-db

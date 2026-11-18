@@ -1,9 +1,9 @@
 
    ◈  ReqriumOS live
 
-   The glass desktop starts automatically on tty1.
-   If your machine has no 3D graphics (some VMs), you stay here:
-     reqrium-session        start the desktop by hand
-     archinstall            install Arch, then run reqrium-postinstall
-     reqrium-postinstall    turn the fresh install into ReqriumOS
+   The glass desktop starts automatically, with the installer open.
+   If your machine has no 3D graphics (some VMs), you stay here instead:
+     reqrium-installer      install ReqriumOS onto a drive (works from here too)
+     reqrium-session        try starting the desktop by hand
+     iwctl                  connect to Wi-Fi
 

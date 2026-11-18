@@ -10,7 +10,7 @@
 
     "modules-left":   ["custom/logo", "hyprland/workspaces", "hyprland/window"],
     "modules-center": ["clock"],
-    "modules-right":  ["mpris", "tray", "pulseaudio", "network", "battery", "custom/power"],
+    "modules-right":  ["mpris", "tray", "pulseaudio", "network", "power-profiles-daemon", "battery", "custom/power"],
 
     "custom/logo": {
         "format": "◈",
@@ -66,6 +66,16 @@
         "format-disconnected": "󰖪 offline",
         "tooltip-format": "{ipaddr} via {gwaddr}",
         "on-click": "nm-connection-editor"
+    },
+
+    "power-profiles-daemon": {
+        "format": "{icon}",
+        "tooltip-format": "Power mode: {profile}",
+        "format-icons": {
+            "performance": "󰓅",
+            "balanced": "󰾅",
+            "power-saver": "󰾆"
+        }
     },
 
     "battery": {

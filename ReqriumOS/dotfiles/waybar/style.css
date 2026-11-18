@@ -31,7 +31,7 @@ tooltip {
 
 /* Every module is a glass pill that lights up on hover */
 #custom-logo, #workspaces, #window, #clock, #mpris, #tray,
-#pulseaudio, #network, #battery, #custom-power {
+#pulseaudio, #network, #power-profiles-daemon, #battery, #custom-power {
     background: rgba(255, 255, 255, 0.07);
     border: 1px solid rgba(255, 255, 255, 0.10);
     border-radius: 15px;
@@ -41,7 +41,7 @@ tooltip {
 }
 
 #custom-logo:hover, #clock:hover, #pulseaudio:hover,
-#network:hover, #battery:hover, #custom-power:hover, #mpris:hover {
+#network:hover, #power-profiles-daemon:hover, #battery:hover, #custom-power:hover, #mpris:hover {
     background: rgba(255, 255, 255, 0.20);
     border-color: rgba(255, 255, 255, 0.35);
     box-shadow: 0 0 14px rgba(125, 211, 252, 0.35);
@@ -91,6 +91,8 @@ window#waybar.empty #window { padding: 0; margin: 0; }
     color: #ffffff;
 }
 
+#power-profiles-daemon.performance { color: #fda4af; }
+#power-profiles-daemon.power-saver { color: #86efac; }
 #battery.warning  { color: #fcd34d; }
 #battery.critical {
     color: #ffffff;
