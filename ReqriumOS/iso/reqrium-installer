@@ -204,8 +204,8 @@ arch-chroot "$MNT" /usr/share/reqriumos/system/reqrium-configure \
   --user "$USERNAME" --extras "$EXTRAS"
 
 # Keyboard layout for the desktop
-for f in "$MNT/home/$USERNAME/.config/hypr/hyprland.conf" "$MNT/etc/skel/.config/hypr/hyprland.conf"; do
-  sed -i "s/^\(\s*kb_layout = \).*/\1$KEYMAP/" "$f"
+for f in "$MNT/home/$USERNAME/.config/hypr/hyprland.lua" "$MNT/etc/skel/.config/hypr/hyprland.lua"; do
+  sed -i "s/kb_layout = \"[^\"]*\"/kb_layout = \"$KEYMAP\"/" "$f"
 done
 
 step "Installing the bootloader"

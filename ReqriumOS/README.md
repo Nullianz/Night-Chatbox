@@ -9,8 +9,8 @@ windows, a floating glass panel, and soft, bouncy animations everywhere.
 
 | Piece | What it does |
 |---|---|
-| **Hyprland** (compositor) | 4-pass blur with vibrancy and grain behind every translucent surface, rounded squircle corners, soft shadows, and a gradient border that slowly rotates around the focused window |
-| **Animations** | Windows pop in with a jelly overshoot and drip away on close. Workspaces glide vertically. Panels and menus float in. |
+| **Hyprland** (compositor) | Native acrylic glass (refraction, curved lens edges, a hint of chromatic aberration) over a 4-pass blur with vibrancy and grain behind every translucent surface, rounded squircle corners, soft shadows, and a gradient border that slowly rotates around the focused window |
+| **Animations** | Spring physics: windows pop in with a jelly overshoot, wobble while you drag them (with motion blur), and drip away on close. Workspaces glide vertically. Panels and menus float in. |
 | **Waybar** | A floating glass panel made of glass "pills". The active workspace stretches like liquid. |
 | **Rofi** | Frosted app launcher, clipboard picker and power menu |
 | **Hyprlock** | Lock screen with a big clock and a glass password field over your blurred desktop |
@@ -102,12 +102,17 @@ always produce the same system.
 
 ## Customising
 
-- **More or less glass:** change `decoration { active_opacity, inactive_opacity, blur { passes, vibrancy } }` in `dotfiles/hypr/hyprland.conf`.
-- **Animation speed:** the number after `1,` in each `animation =` line (lower is faster).
+- **Glass style:** in `dotfiles/hypr/hyprland.lua`, set `blur.variant` to another effect
+  (`BLUR.acrylic` is the default; try `BLUR.prism`, `BLUR.frost`, `BLUR.water` or `BLUR.aurora`) and tune
+  the `acrylic` block (refraction, bulb width, clarity, aberration, tint).
+- **More or less see-through:** `decoration.active_opacity` / `inactive_opacity`.
+- **Animation speed:** the `speed` of each `hl.animation` line (lower is faster).
 - **Wallpapers:** put images in `~/.config/reqrium/wallpapers/`.
 
 ## Notes
 
 - Blur needs a GPU with working 3D drivers. In VirtualBox or VMware, enable 3D acceleration. In QEMU, use `-device virtio-vga-gl -display gtk,gl=on`.
-- The configs target recent Hyprland (0.4x/0.5x). Hyprland changes its config syntax from time to time, so if it shows a config error banner, check the
-  [Hyprland wiki](https://wiki.hypr.land) for the renamed option.
+- The desktop config is written for **Hyprland 0.57+**, which uses a Lua config file
+  (`hyprland.lua`). It was boot-tested with Hyprland 0.57.2 and loads with no config errors.
+- In virtual machines without 3D acceleration, ReqriumOS switches to a lighter "lite" glass
+  (no refraction, wobble or motion blur) so the desktop stays usable.

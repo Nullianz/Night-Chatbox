@@ -79,12 +79,12 @@ GETTY
 LIVE_HOME="$A/home/reqrium"
 mkdir -p "$LIVE_HOME/.config"
 cp -r "$ROOT/dotfiles/." "$LIVE_HOME/.config/"
-# The live desktop greets you with the installer
-cat >> "$LIVE_HOME/.config/hypr/hyprland.conf" <<'HYPR'
-
-# Live ISO: open the installer on start (SUPER+I reopens it)
-exec-once = sleep 2 && kitty --title "Install ReqriumOS" sudo reqrium-installer
-bind = $mod, I, exec, kitty --title "Install ReqriumOS" sudo reqrium-installer
+# The live desktop greets you with the installer (loaded by hyprland.lua)
+cat > "$LIVE_HOME/.config/hypr/live.lua" <<'HYPR'
+-- Live USB only: open the installer on start, SUPER+I reopens it
+local installer = 'kitty --title "Install ReqriumOS" sudo reqrium-installer'
+hl.on("hyprland.start", function() hl.exec_cmd("sleep 3 && " .. installer) end)
+hl.bind("SUPER + I", hl.dsp.exec_cmd(installer))
 HYPR
 
 # Start the glass desktop on the first console (falls back to the shell)

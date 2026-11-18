@@ -1,6 +1,17 @@
 #!/bin/sh
-# Starts the ReqriumOS desktop (Hyprland). Newer Hyprland ships a
-# start-hyprland launcher; fall back to the plain binary otherwise.
+# Starts the ReqriumOS desktop (Hyprland).
+
+# Without a real GPU (e.g. a VM without 3D acceleration) everything is drawn
+# by the CPU, so ask hyprland.lua for the lighter glass effects.
+case "$(systemd-detect-virt --vm 2>/dev/null)" in
+  none|"") ;;
+  *) for d in /sys/class/drm/card*/device/driver; do
+       case "$(basename "$(readlink -f "$d")")" in
+         virtio_gpu|virtio-pci|bochs*|qxl|cirrus*|vboxvideo|simpledrm) export REQRIUM_LITE=1 ;;
+       esac
+     done ;;
+esac
+
 if command -v start-hyprland >/dev/null 2>&1; then
   exec start-hyprland
 fi
