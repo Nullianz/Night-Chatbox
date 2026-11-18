@@ -4,7 +4,7 @@
 window { background: transparent; }
 
 /* the login card */
-frame, .background > box > box, grid {
+frame {
   background: linear-gradient(160deg, rgba(196, 181, 253, 0.22), rgba(20, 16, 48, 0.55));
   border: 1px solid rgba(255, 255, 255, 0.25);
   border-radius: 28px;

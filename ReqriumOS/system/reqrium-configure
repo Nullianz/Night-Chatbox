@@ -122,6 +122,20 @@ install -Dm644 "$SRC/system/regreet.toml" /etc/greetd/regreet.toml
 install -Dm644 "$SRC/system/regreet.css"  /etc/greetd/regreet.css
 install -Dm644 "$SRC/dotfiles/reqrium/wallpapers/liquid-night.png" \
   /usr/share/backgrounds/reqriumos/liquid-night.png
+# Only offer the "ReqriumOS" session on the login screen (Hyprland's own
+# entries start the same desktop, so hide them)
+mkdir -p /usr/local/share/wayland-sessions
+for sess in hyprland.desktop hyprland-uwsm.desktop; do
+  printf '[Desktop Entry]\nType=Application\nName=%s\nNoDisplay=true\nHidden=true\n' \
+    "${sess%.desktop}" > "/usr/local/share/wayland-sessions/$sess"
+done
+# Pre-select this user and the ReqriumOS session on the first login
+if [ -n "$USER_NAME" ] && [ ! -f /var/lib/regreet/state.toml ]; then
+  mkdir -p /var/lib/regreet
+  printf 'last_user = "%s"\n\n[user_to_last_sess]\n%s = "ReqriumOS"\n' \
+    "$USER_NAME" "$USER_NAME" > /var/lib/regreet/state.toml
+  chown -R greeter: /var/lib/regreet
+fi
 
 # Boot splash: the pulsing ReqriumOS logo (Plymouth)
 mkdir -p /usr/share/plymouth/themes/reqrium
