@@ -22,7 +22,8 @@ step() { gum style --foreground "$SKY" --bold "◈ $*"; }
 fail() { gum style --foreground "$RED" --bold "✗ $*"; exit 1; }
 ask()  { gum input --header "$1" --header.foreground "$SKY" --placeholder "$2" --value "${3:-}" --width 50; }
 
-[ "$(id -u)" -eq 0 ] || fail "Run the installer as root."
+# Re-run through sudo when started as a normal user
+[ "$(id -u)" -eq 0 ] || exec sudo "$0" "$@"
 command -v gum >/dev/null || { echo "gum is missing; this must run from the ReqriumOS ISO." >&2; exit 1; }
 [ -d "$SRC" ] || fail "ReqriumOS files missing from $SRC."
 

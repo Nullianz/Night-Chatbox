@@ -1,7 +1,7 @@
 [Desktop Entry]
 Name=Install ReqriumOS
 Comment=Install ReqriumOS onto a drive
-Exec=kitty --title "Install ReqriumOS" reqrium-installer
+Exec=kitty --title "Install ReqriumOS" sudo reqrium-installer
 Icon=system-software-install
 Terminal=false
 Type=Application

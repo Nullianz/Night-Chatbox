@@ -41,8 +41,8 @@ sed -i '/^file_permissions=(/a\
   ["/usr/local/bin/reqrium-installer"]="0:0:755"\
   ["/usr/share/reqriumos/system/reqrium-configure"]="0:0:755"\
   ["/usr/share/reqriumos/system/reqrium-session"]="0:0:755"\
-  ["/root/.config/reqrium/scripts/wallpaper.sh"]="0:0:755"\
-  ["/root/.config/reqrium/scripts/powermenu.sh"]="0:0:755"' \
+  ["/etc/sudoers.d/10-reqrium-live"]="0:0:440"\
+  ["/home/reqrium/"]="1000:1000:755"' \
   "$PROFILE/profiledef.sh"
 
 # --- packages -----------------------------------------------------------------
@@ -61,29 +61,43 @@ install -Dm755 "$ROOT/system/reqrium-session" "$A/usr/local/bin/reqrium-session"
 install -Dm644 "$ROOT/system/reqrium.desktop" "$A/usr/share/wayland-sessions/reqrium.desktop"
 install -Dm755 "$ROOT/iso/reqrium-installer" "$A/usr/local/bin/reqrium-installer"
 
-# Desktop config for the live root user
-mkdir -p "$A/root/.config"
-cp -r "$ROOT/dotfiles/." "$A/root/.config/"
+# Live user. Hyprland refuses to run as root, so the live session logs in
+# as "reqrium" (no password, passwordless sudo) instead.
+install -Dm644 /dev/stdin "$A/etc/sysusers.d/reqrium-live.conf" <<'SYSUSERS'
+u reqrium 1000 "ReqriumOS Live" /home/reqrium /usr/bin/zsh
+m reqrium wheel
+SYSUSERS
+install -Dm440 /dev/stdin "$A/etc/sudoers.d/10-reqrium-live" <<'SUDO'
+reqrium ALL=(ALL:ALL) NOPASSWD: ALL
+SUDO
+install -Dm644 /dev/stdin "$A/etc/systemd/system/getty@tty1.service.d/autologin.conf" <<'GETTY'
+[Service]
+ExecStart=
+ExecStart=-/usr/bin/agetty --noreset --noclear --autologin reqrium - ${TERM}
+GETTY
+
+LIVE_HOME="$A/home/reqrium"
+mkdir -p "$LIVE_HOME/.config"
+cp -r "$ROOT/dotfiles/." "$LIVE_HOME/.config/"
 # The live desktop greets you with the installer
-cat >> "$A/root/.config/hypr/hyprland.conf" <<'HYPR'
+cat >> "$LIVE_HOME/.config/hypr/hyprland.conf" <<'HYPR'
 
 # Live ISO: open the installer on start (SUPER+I reopens it)
-exec-once = sleep 2 && kitty --title "Install ReqriumOS" reqrium-installer
-bind = $mod, I, exec, kitty --title "Install ReqriumOS" reqrium-installer
+exec-once = sleep 2 && kitty --title "Install ReqriumOS" sudo reqrium-installer
+bind = $mod, I, exec, kitty --title "Install ReqriumOS" sudo reqrium-installer
 HYPR
+
+# Start the glass desktop on the first console (falls back to the shell)
+cat > "$LIVE_HOME/.zlogin" <<'ZLOGIN'
+if [ "$(tty)" = "/dev/tty1" ] && [ -z "${WAYLAND_DISPLAY:-}" ] && [ -e /dev/dri/card0 ]; then
+  reqrium-session || echo "The desktop could not start. Run: sudo reqrium-installer"
+fi
+ZLOGIN
+touch "$LIVE_HOME/.zshrc"
 
 # Everything the disk installer copies onto the new system
 mkdir -p "$A/usr/share/reqriumos"
 cp -r "$ROOT/dotfiles" "$ROOT/system" "$ROOT/packages.txt" "$A/usr/share/reqriumos/"
-
-# Auto-start the glass desktop on tty1 (falls back to the shell if it exits)
-cat >> "$A/root/.zlogin" <<'ZLOGIN'
-
-# ReqriumOS: launch the desktop on the first console
-if [ "$(tty)" = "/dev/tty1" ] && [ -z "${WAYLAND_DISPLAY:-}" ] && [ -e /dev/dri/card0 ] ; then
-  reqrium-session || echo "Desktop exited. Type reqrium-session to try again."
-fi
-ZLOGIN
 
 # --- build ----------------------------------------------------------------------
 echo "◈ Building ISO (this takes a while)"
