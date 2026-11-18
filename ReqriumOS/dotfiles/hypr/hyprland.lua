@@ -199,7 +199,7 @@ hl.animation({ leaf = "specialWorkspace", enabled = true, speed = 5, spring = "j
 ---------------------
 -- Panel, launcher, notifications and power menu become real glass
 for _, ns in ipairs({ "waybar", "rofi", "swaync-control-center", "swaync-notification-window",
-                      "nwg-dock", "swayosd" }) do
+                      "dock", "swayosd" }) do
     hl.layer_rule({
         name  = "glass-" .. ns,
         match = { namespace = "^" .. ns .. "$" },

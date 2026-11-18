@@ -165,3 +165,15 @@ scale slider {
 .close-button:hover { background: rgba(251, 113, 133, 0.6); }
 
 .floating-notifications .notification { margin: 4px 0; }
+
+/* no dark boxes behind the notification cards inside the Control Center */
+.control-center .control-center-list,
+.control-center .control-center-list > *,
+.control-center viewport,
+.control-center scrolledwindow,
+.notification-group,
+.notification-group .notification-row,
+.notification-row .notification-background {
+  background: transparent;
+  box-shadow: none;
+}
