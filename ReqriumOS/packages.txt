@@ -15,9 +15,8 @@ waybar
 rofi
 swaync
 swayosd
-nwg-dock-hyprland
 libnotify
-swww
+awww
 kitty
 firefox
 

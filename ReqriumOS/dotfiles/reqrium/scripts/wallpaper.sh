@@ -19,7 +19,9 @@ current="$(cat "$STATE" 2>/dev/null || echo "${walls[0]}")"
 
 case "${1:-init}" in
   init)
-    pgrep -x "${W}-daemon" >/dev/null || { "${W}-daemon" & sleep 0.4; }
+    pgrep -x "${W}-daemon" >/dev/null || { "${W}-daemon" & }
+    # wait (up to ~15s on slow machines) until the daemon answers
+    for _ in $(seq 1 60); do "$W" query >/dev/null 2>&1 && break; sleep 0.25; done
     [ -f "$current" ] || current="${walls[0]}"
     "$W" img "$current" --transition-type grow --transition-pos center \
         --transition-duration 1.6 --transition-fps 60 --transition-bezier .22,1,.36,1

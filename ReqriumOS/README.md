@@ -17,12 +17,12 @@ windows, a floating glass panel, and soft, bouncy animations everywhere.
 | **Rofi** | Frosted app launcher, clipboard picker and power menu |
 | **Hyprlock** | Lock screen with a big clock and a glass password field over your blurred desktop |
 | **Control Center** (swaync) | Glass panel with quick toggles (Wi-Fi, Bluetooth, battery saver, mic, screenshot, colour picker, wallpaper, power), volume and brightness sliders, media player and notifications |
-| **Dock** (nwg-dock-hyprland) | Glass dock with your pinned apps; icons bounce up on hover |
+| **Dock** | Glass dock (a second Waybar) with pinned apps that bounce up on hover, plus icons of open apps |
 | **App grid** | Full-screen glass "launchpad" of all your apps |
 | **On-screen pop-ups** (swayosd) | Glass pills for volume and brightness changes |
 | **Login screen** (ReGreet) | Graphical frosted login card over the wallpaper |
 | **Boot splash** (Plymouth) | Pulsing glass ◈ logo with rippling dots while the system starts |
-| **swww** | Wallpapers change with a wave ripple that starts at your cursor |
+| **awww** | Wallpapers change with a wave ripple that starts at your cursor |
 | **Firefox** | Installed by default as the web browser |
 | **Kitty** | Translucent terminal with the Reqrium Night colour palette and a cursor trail |
 

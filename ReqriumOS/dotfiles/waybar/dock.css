@@ -1,0 +1,61 @@
+/* ReqriumOS glass dock. Hyprland blurs it (layer "waybar"). */
+* {
+    font-family: "JetBrainsMono Nerd Font", "Inter", sans-serif;
+    border: none;
+    min-height: 0;
+}
+
+window#waybar.dock {
+    background: transparent;
+}
+
+/* the glass tray holding the icons */
+.modules-center {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.17), rgba(255, 255, 255, 0.06));
+    border: 1px solid rgba(255, 255, 255, 0.24);
+    border-radius: 24px;
+    padding: 4px 10px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+/* app buttons: each a little tinted tile that lifts on hover */
+#custom-apps, #custom-firefox, #custom-files, #custom-terminal,
+#custom-monitor, #custom-editor {
+    font-size: 26px;
+    padding: 0 14px;
+    margin: 4px 2px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.05);
+    transition: all 320ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+#custom-apps:hover, #custom-firefox:hover, #custom-files:hover, #custom-terminal:hover,
+#custom-monitor:hover, #custom-editor:hover {
+    background: rgba(255, 255, 255, 0.22);
+    box-shadow: 0 0 18px rgba(125, 211, 252, 0.5);
+    margin-bottom: 10px;            /* bounce up */
+}
+
+#custom-apps     { color: #e7e5ff; }
+#custom-firefox  { color: #fdba74; }
+#custom-files    { color: #7dd3fc; }
+#custom-terminal { color: #c4b5fd; }
+#custom-monitor  { color: #6ee7b7; }
+#custom-editor   { color: #f0abfc; }
+
+/* running apps, separated from the pinned ones by a thin glass line */
+#taskbar {
+    margin-left: 8px;
+    padding-left: 8px;
+    border-left: 1px solid rgba(255, 255, 255, 0.18);
+}
+#taskbar button {
+    padding: 4px 8px;
+    margin: 4px 2px;
+    border-radius: 16px;
+    transition: all 320ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+#taskbar button:hover { background: rgba(255, 255, 255, 0.18); }
+#taskbar button.active {
+    background: rgba(125, 211, 252, 0.22);
+    box-shadow: inset 0 -3px 0 #7dd3fc;
+}
