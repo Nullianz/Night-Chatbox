@@ -40,16 +40,29 @@ fun refresh() {
 Plymouth.SetRefreshFunction(refresh);
 
 # password prompt (e.g. encrypted disks)
+# Sprites must live in "global." or Plymouth frees them when the function returns.
+global.pw_label = Sprite();
+global.pw_box = Sprite();
 fun display_password(prompt, bullets) {
-  s = "";
-  for (i = 0; i < bullets; i++) s += "•";
-  pw = Image.Text(prompt + "  " + s, 1, 1, 1, 1, "Inter 14");
-  pw_sprite = Sprite(pw);
-  pw_sprite.SetX(W / 2 - pw.GetWidth() / 2);
-  pw_sprite.SetY(H * 0.8);
+  text = "Drive password";
+  if (prompt) text = prompt;
+  dots = "";
+  for (i = 0; i < bullets; i++) dots += "*";
+  if (bullets == 0) dots = " ";
+  label = Image.Text(text, 1, 1, 1, 0.85, "Sans 13");
+  global.pw_label.SetImage(label);
+  global.pw_label.SetX(W / 2 - label.GetWidth() / 2);
+  global.pw_label.SetY(H * 0.74);
+  global.pw_label.SetOpacity(1);
+  field = Image.Text(dots, 0.77, 0.93, 1, 1, "Sans Bold 20");
+  global.pw_box.SetImage(field);
+  global.pw_box.SetX(W / 2 - field.GetWidth() / 2);
+  global.pw_box.SetY(H * 0.74 + label.GetHeight() + 10);
+  global.pw_box.SetOpacity(1);
 }
 Plymouth.SetDisplayPasswordFunction(display_password);
 fun display_normal() {
-  if (pw_sprite) pw_sprite.SetOpacity(0);
+  global.pw_label.SetOpacity(0);
+  global.pw_box.SetOpacity(0);
 }
 Plymouth.SetDisplayNormalFunction(display_normal);
