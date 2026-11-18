@@ -30,6 +30,11 @@ sed -i \
   -e 's/^iso_application=.*/iso_application="ReqriumOS Live"/' \
   "$PROFILE/profiledef.sh"
 
+# Boot menu entries (UEFI systemd-boot, GRUB and BIOS syslinux)
+find "$PROFILE/efiboot" "$PROFILE/grub" "$PROFILE/syslinux" -type f \( -name '*.conf' -o -name '*.cfg' \) \
+  -exec sed -i -e 's/Arch Linux install medium/ReqriumOS Live/g' \
+               -e 's/Arch Linux/ReqriumOS/g' {} +
+
 # Make our scripts executable inside the image
 sed -i '/^file_permissions=(/a\
   ["/usr/local/bin/reqrium-session"]="0:0:755"\
