@@ -1,0 +1,54 @@
+# ReqriumOS boot splash.
+
+W = Window.GetWidth();
+H = Window.GetHeight();
+Window.SetBackgroundTopColor(0.04, 0.04, 0.12);
+Window.SetBackgroundBottomColor(0.02, 0.03, 0.08);
+
+bg = Image("background.png");
+bg_sprite = Sprite(bg.Scale(W, H));
+bg_sprite.SetZ(-100);
+
+logo = Image("logo.png");
+size = Math.Int(H * 0.22);
+logo = logo.Scale(size, size);
+logo_sprite = Sprite(logo);
+logo_sprite.SetX(W / 2 - size / 2);
+logo_sprite.SetY(H / 2 - size / 2 - H * 0.04);
+
+name = Image.Text("ReqriumOS", 1, 1, 1, 0.9, "Inter Bold 26");
+name_sprite = Sprite(name);
+name_sprite.SetX(W / 2 - name.GetWidth() / 2);
+name_sprite.SetY(H / 2 + size / 2 + H * 0.02);
+
+# three dots that ripple while the system starts
+for (i = 0; i < 3; i++) {
+  dot[i] = Sprite(Image.Text("●", 0.49, 0.83, 0.99, 1, "Inter 14"));
+  dot[i].SetX(W / 2 - 30 + i * 24);
+  dot[i].SetY(H / 2 + size / 2 + H * 0.08);
+}
+
+t = 0;
+fun refresh() {
+  t++;
+  # the logo "breathes" like liquid glass
+  logo_sprite.SetOpacity(0.70 + 0.30 * Math.Sin(t / 18));
+  for (i = 0; i < 3; i++)
+    dot[i].SetOpacity(0.25 + 0.75 * Math.Abs(Math.Sin(t / 14 - i * 0.6)));
+}
+Plymouth.SetRefreshFunction(refresh);
+
+# password prompt (e.g. encrypted disks)
+fun display_password(prompt, bullets) {
+  s = "";
+  for (i = 0; i < bullets; i++) s += "•";
+  pw = Image.Text(prompt + "  " + s, 1, 1, 1, 1, "Inter 14");
+  pw_sprite = Sprite(pw);
+  pw_sprite.SetX(W / 2 - pw.GetWidth() / 2);
+  pw_sprite.SetY(H * 0.8);
+}
+Plymouth.SetDisplayPasswordFunction(display_password);
+fun display_normal() {
+  if (pw_sprite) pw_sprite.SetOpacity(0);
+}
+Plymouth.SetDisplayNormalFunction(display_normal);

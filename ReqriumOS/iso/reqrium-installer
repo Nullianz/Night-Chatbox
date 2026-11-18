@@ -210,7 +210,7 @@ unset PASS1 PASS2
 step "Installing ReqriumOS"
 mkdir -p "$MNT/usr/share"
 cp -r "$SRC" "$MNT/usr/share/reqriumos"
-arch-chroot "$MNT" /usr/share/reqriumos/system/reqrium-configure \
+REQRIUM_INSTALLER=1 arch-chroot "$MNT" /usr/share/reqriumos/system/reqrium-configure \
   --user "$USERNAME" --extras "$EXTRAS"
 
 # Keyboard layout for the desktop

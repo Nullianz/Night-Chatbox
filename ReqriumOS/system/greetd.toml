@@ -1,6 +1,7 @@
 [terminal]
 vt = 1
 
+# ReGreet: the graphical glass login screen, shown full screen by cage
 [default_session]
-command = "tuigreet --time --remember --asterisks --greeting 'Welcome to ReqriumOS' --cmd reqrium-session"
+command = "cage -s -- regreet"
 user = "greeter"

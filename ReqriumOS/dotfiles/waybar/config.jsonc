@@ -10,12 +10,12 @@
 
     "modules-left":   ["custom/logo", "hyprland/workspaces", "hyprland/window"],
     "modules-center": ["clock"],
-    "modules-right":  ["mpris", "tray", "pulseaudio", "network", "power-profiles-daemon", "battery", "custom/power"],
+    "modules-right":  ["mpris", "tray", "pulseaudio", "network", "power-profiles-daemon", "battery", "custom/notification", "custom/power"],
 
     "custom/logo": {
         "format": "◈",
         "tooltip-format": "ReqriumOS",
-        "on-click": "rofi -show drun -theme ~/.config/rofi/glass.rasi"
+        "on-click": "rofi -show drun -theme ~/.config/rofi/grid.rasi"
     },
 
     "hyprland/workspaces": {
@@ -83,6 +83,27 @@
         "format": "{icon} {capacity}%",
         "format-charging": "󰂄 {capacity}%",
         "format-icons": ["󰁺", "󰁼", "󰁾", "󰂀", "󰁹"]
+    },
+
+    "custom/notification": {
+        "tooltip": false,
+        "format": "{icon}",
+        "format-icons": {
+            "notification": "󰂚<span foreground='#f0abfc'><sup> ●</sup></span>",
+            "none": "󰂚",
+            "dnd-notification": "󰂛<span foreground='#f0abfc'><sup> ●</sup></span>",
+            "dnd-none": "󰂛",
+            "inhibited-notification": "󰂚<span foreground='#f0abfc'><sup> ●</sup></span>",
+            "inhibited-none": "󰂚",
+            "dnd-inhibited-notification": "󰂛<span foreground='#f0abfc'><sup> ●</sup></span>",
+            "dnd-inhibited-none": "󰂛"
+        },
+        "return-type": "json",
+        "exec-if": "which swaync-client",
+        "exec": "swaync-client -swb",
+        "on-click": "swaync-client -t -sw",
+        "on-click-right": "swaync-client -d -sw",
+        "escape": true
     },
 
     "custom/power": {

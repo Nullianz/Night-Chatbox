@@ -1,16 +1,15 @@
 #!/usr/bin/env bash
-# ReqriumOS power menu, shown in the glass launcher.
+# ReqriumOS power menu: full-screen glass tiles.
 set -euo pipefail
 
-choice="$(printf '%s\n' \
-    "  Lock" "󰍃  Log out" "󰤄  Sleep" "  Restart" "⏻  Shut down" |
-    rofi -dmenu -i -p "Power" -theme ~/.config/rofi/glass.rasi \
-         -theme-str 'window { width: 320px; } listview { lines: 5; }')" || exit 0
+choice="$(printf '%s\n' "󰌾  Lock" "󰍃  Log out" "󰤄  Sleep" "󰜉  Restart" "⏻  Shut down" |
+    rofi -dmenu -i -theme ~/.config/rofi/powermenu.rasi \
+         -mesg "See you soon, $(whoami)" -p "")" || exit 0
 
 case "$choice" in
-  *Lock)      hyprlock ;;
-  *"Log out") hyprctl dispatch exit ;;
-  *Sleep)     systemctl suspend ;;
-  *Restart)   systemctl reboot ;;
+  *Lock)        hyprlock ;;
+  *"Log out")   hyprctl dispatch 'hl.dsp.exit()' ;;
+  *Sleep)       systemctl suspend ;;
+  *Restart)     systemctl reboot ;;
   *"Shut down") systemctl poweroff ;;
 esac

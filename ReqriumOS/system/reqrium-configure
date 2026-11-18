@@ -113,8 +113,32 @@ install -Dm644 "$SRC/system/mimeapps.list"     /etc/xdg/mimeapps.list
 install -Dm644 "$SRC/system/zram-generator.conf" /etc/systemd/zram-generator.conf
 install -Dm755 "$SRC/system/reqrium-session"   /usr/local/bin/reqrium-session
 install -Dm644 "$SRC/system/reqrium.desktop"   /usr/share/wayland-sessions/reqrium.desktop
+
+# Glass login screen (ReGreet) and its wallpaper
+install -Dm644 "$SRC/system/regreet.toml" /etc/greetd/regreet.toml
+install -Dm644 "$SRC/system/regreet.css"  /etc/greetd/regreet.css
+install -Dm644 "$SRC/dotfiles/reqrium/wallpapers/liquid-night.png" \
+  /usr/share/backgrounds/reqriumos/liquid-night.png
+
+# Boot splash: the pulsing ReqriumOS logo (Plymouth)
+mkdir -p /usr/share/plymouth/themes/reqrium
+cp "$SRC"/system/plymouth/reqrium/* /usr/share/plymouth/themes/reqrium/
+plymouth-set-default-theme reqrium
+if ! grep -q '^HOOKS=.*plymouth' /etc/mkinitcpio.conf; then
+  sed -i -E '/^HOOKS=/s/\b(systemd|udev)\b/\1 plymouth/' /etc/mkinitcpio.conf
+fi
 if [ -f /etc/default/grub ]; then
   sed -i 's/^GRUB_DISTRIBUTOR=.*/GRUB_DISTRIBUTOR="ReqriumOS"/' /etc/default/grub
+  for word in quiet splash; do
+    grep -Eq "^GRUB_CMDLINE_LINUX_DEFAULT=\".*\\b$word\\b" /etc/default/grub || \
+      sed -i -E "s/^(GRUB_CMDLINE_LINUX_DEFAULT=\"[^\"]*)\"/\\1 $word\"/" /etc/default/grub
+  done
+fi
+say "Rebuilding the boot image (initramfs) with the splash screen"
+mkinitcpio -P
+# Existing GRUB installs: refresh the menu (the disk installer does this itself)
+if [ -f /boot/grub/grub.cfg ] && [ -z "${REQRIUM_INSTALLER:-}" ]; then
+  grub-mkconfig -o /boot/grub/grub.cfg
 fi
 
 # Firewall: block incoming, allow outgoing (Arch's default policy), on at boot

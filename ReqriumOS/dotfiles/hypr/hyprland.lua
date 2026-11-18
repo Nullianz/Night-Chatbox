@@ -37,7 +37,9 @@ hl.monitor({ output = "", mode = "preferred", position = "auto", scale = "auto" 
 hl.on("hyprland.start", function()
     hl.exec_cmd(scripts .. "/wallpaper.sh init")
     hl.exec_cmd("waybar")
-    hl.exec_cmd("mako")
+    hl.exec_cmd("swaync")                      -- Control Center + notifications
+    hl.exec_cmd("swayosd-server")              -- glass volume/brightness pop-ups
+    hl.exec_cmd(scripts .. "/dock.sh")         -- glass dock
     hl.exec_cmd("hypridle")
     hl.exec_cmd("systemctl --user start hyprpolkitagent")
     hl.exec_cmd("nm-applet --indicator")
@@ -192,7 +194,8 @@ hl.animation({ leaf = "specialWorkspace", enabled = true, speed = 5, spring = "j
 ---- GLASS LAYERS ---
 ---------------------
 -- Panel, launcher, notifications and power menu become real glass
-for _, ns in ipairs({ "waybar", "rofi", "notifications", "logout_dialog" }) do
+for _, ns in ipairs({ "waybar", "rofi", "swaync-control-center", "swaync-notification-window",
+                      "nwg-dock", "swayosd" }) do
     hl.layer_rule({
         name  = "glass-" .. ns,
         match = { namespace = "^" .. ns .. "$" },
@@ -237,8 +240,11 @@ hl.bind(key("L"),      hl.dsp.exec_cmd("hyprlock"))
 hl.bind(key("W"),      hl.dsp.exec_cmd(scripts .. "/wallpaper.sh next"))
 hl.bind(key("C"),      hl.dsp.exec_cmd("cliphist list | rofi -dmenu -theme ~/.config/rofi/glass.rasi | cliphist decode | wl-copy"))
 hl.bind(key("SHIFT + E"), hl.dsp.exec_cmd(scripts .. "/powermenu.sh"))
-hl.bind(key("SHIFT + S"), hl.dsp.exec_cmd('grim -g "$(slurp)" - | wl-copy && notify-send "Screenshot copied"'))
-hl.bind("Print",          hl.dsp.exec_cmd('grim - | wl-copy && notify-send "Screenshot copied"'))
+hl.bind(key("A"),         hl.dsp.exec_cmd("rofi -show drun -theme ~/.config/rofi/grid.rasi"))
+hl.bind(key("N"),         hl.dsp.exec_cmd("swaync-client -t -sw"))
+hl.bind(key("SHIFT + C"), hl.dsp.exec_cmd("hyprpicker -a"))
+hl.bind(key("SHIFT + S"), hl.dsp.exec_cmd(scripts .. "/screenshot.sh region"))
+hl.bind("Print",          hl.dsp.exec_cmd(scripts .. "/screenshot.sh screen"))
 
 -- Focus
 hl.bind(key("left"),  hl.dsp.focus({ direction = "left" }))
@@ -264,15 +270,17 @@ hl.bind(key("mouse:273"), hl.dsp.window.resize(), { mouse = true })
 
 -- Media and hardware keys
 local held = { locked = true, repeating = true }
-hl.bind("XF86AudioRaiseVolume",  hl.dsp.exec_cmd("wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+"), held)
-hl.bind("XF86AudioLowerVolume",  hl.dsp.exec_cmd("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"), held)
-hl.bind("XF86AudioMute",         hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"), held)
-hl.bind("XF86AudioMicMute",      hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"), held)
-hl.bind("XF86MonBrightnessUp",   hl.dsp.exec_cmd("brightnessctl s 5%+"), held)
-hl.bind("XF86MonBrightnessDown", hl.dsp.exec_cmd("brightnessctl s 5%-"), held)
-hl.bind("XF86AudioPlay", hl.dsp.exec_cmd("playerctl play-pause"), { locked = true })
-hl.bind("XF86AudioNext", hl.dsp.exec_cmd("playerctl next"),       { locked = true })
-hl.bind("XF86AudioPrev", hl.dsp.exec_cmd("playerctl previous"),   { locked = true })
+-- (swayosd shows a glass pop-up for each change)
+local osd = "swayosd-client "
+hl.bind("XF86AudioRaiseVolume",  hl.dsp.exec_cmd(osd .. "--output-volume raise --max-volume 100"), held)
+hl.bind("XF86AudioLowerVolume",  hl.dsp.exec_cmd(osd .. "--output-volume lower"), held)
+hl.bind("XF86AudioMute",         hl.dsp.exec_cmd(osd .. "--output-volume mute-toggle"), held)
+hl.bind("XF86AudioMicMute",      hl.dsp.exec_cmd(osd .. "--input-volume mute-toggle"), held)
+hl.bind("XF86MonBrightnessUp",   hl.dsp.exec_cmd(osd .. "--brightness raise"), held)
+hl.bind("XF86MonBrightnessDown", hl.dsp.exec_cmd(osd .. "--brightness lower"), held)
+hl.bind("XF86AudioPlay", hl.dsp.exec_cmd(osd .. "--playerctl play-pause"), { locked = true })
+hl.bind("XF86AudioNext", hl.dsp.exec_cmd(osd .. "--playerctl next"),       { locked = true })
+hl.bind("XF86AudioPrev", hl.dsp.exec_cmd(osd .. "--playerctl prev"),       { locked = true })
 
 -- Extra settings for the live USB (opens the installer); absent elsewhere
 pcall(require, "live")

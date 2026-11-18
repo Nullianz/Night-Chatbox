@@ -16,14 +16,19 @@ windows, a floating glass panel, and soft, bouncy animations everywhere.
 | **Waybar** | A floating glass panel made of glass "pills". The active workspace stretches like liquid. |
 | **Rofi** | Frosted app launcher, clipboard picker and power menu |
 | **Hyprlock** | Lock screen with a big clock and a glass password field over your blurred desktop |
-| **Mako** | Glass notifications |
+| **Control Center** (swaync) | Glass panel with quick toggles (Wi-Fi, Bluetooth, battery saver, mic, screenshot, colour picker, wallpaper, power), volume and brightness sliders, media player and notifications |
+| **Dock** (nwg-dock-hyprland) | Glass dock with your pinned apps; icons bounce up on hover |
+| **App grid** | Full-screen glass "launchpad" of all your apps |
+| **On-screen pop-ups** (swayosd) | Glass pills for volume and brightness changes |
+| **Login screen** (ReGreet) | Graphical frosted login card over the wallpaper |
+| **Boot splash** (Plymouth) | Pulsing glass ◈ logo with rippling dots while the system starts |
 | **swww** | Wallpapers change with a wave ripple that starts at your cursor |
 | **Firefox** | Installed by default as the web browser |
 | **Kitty** | Translucent terminal with the Reqrium Night colour palette and a cursor trail |
 
 ## What's included
 
-**Every install gets:** Firefox, Thunar file manager (with archive, USB-drive
+**Every install gets:** Firefox, Mission Center (task manager), Calculator, Calendar, Thunar file manager (with archive, USB-drive
 and thumbnail support), mpv, Loupe image viewer, Text Editor, btop, fastfetch
 (with a ReqriumOS logo), Bluetooth and Wi-Fi tray apps, laptop power modes in
 the panel, NTFS/exFAT drive support, Flatpak with Flathub, the **paru** AUR
@@ -88,7 +93,10 @@ always produce the same system.
 
 | Keys | Action |
 |---|---|
-| `SUPER + Space` | App launcher |
+| `SUPER + Space` | App search |
+| `SUPER + A` | App grid |
+| `SUPER + N` | Control Center |
+| `SUPER + SHIFT + C` | Colour picker |
 | `SUPER + Return` | Terminal |
 | `SUPER + E` | Files |
 | `SUPER + I` | Open the installer (live USB only) |
@@ -100,7 +108,7 @@ always produce the same system.
 | `SUPER + W` | Next wallpaper (ripple transition) |
 | `SUPER + C` | Clipboard history |
 | `SUPER + L` | Lock |
-| `SUPER + SHIFT + S` | Screenshot a region |
+| `SUPER + SHIFT + S` | Screenshot a region (opens in Satty to draw on) |
 | `SUPER + SHIFT + E` | Power menu |
 
 ## Customising

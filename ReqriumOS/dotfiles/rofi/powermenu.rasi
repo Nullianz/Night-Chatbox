@@ -1,0 +1,46 @@
+/* ReqriumOS power menu: big glass tiles across a dimmed, blurred screen. */
+@import "glass.rasi"
+
+configuration { show-icons: false; }
+
+window {
+    fullscreen: true;
+    border: 0;
+    border-radius: 0;
+    padding: 30% 18%;
+    background-color: rgba(11, 10, 31, 45%);
+}
+
+mainbox { children: [ message, listview ]; spacing: 30px; }
+
+message { background-color: transparent; }
+textbox {
+    horizontal-align: 0.5;
+    font: "Inter Display Bold 22";
+    text-color: rgba(255, 255, 255, 90%);
+}
+
+listview {
+    columns: 5;
+    lines: 1;
+    spacing: 22px;
+    layout: vertical;
+    fixed-height: true;
+}
+
+element {
+    orientation: vertical;
+    padding: 30px 10px;
+    border-radius: 30px;
+    background-color: rgba(255, 255, 255, 9%);
+    border: 1px;
+    border-color: rgba(255, 255, 255, 16%);
+}
+element selected.normal {
+    background-color: rgba(196, 181, 253, 28%);
+    border-color: rgba(125, 211, 252, 70%);
+}
+element-text {
+    horizontal-align: 0.5;
+    font: "JetBrainsMono Nerd Font 16";
+}

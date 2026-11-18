@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=ReqriumOS
+Description=ReqriumOS boot splash: a pulsing glass diamond over the night wallpaper
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/reqrium
+ScriptFile=/usr/share/plymouth/themes/reqrium/reqrium.script

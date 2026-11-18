@@ -13,7 +13,9 @@ xdg-desktop-portal-gtk
 xdg-user-dirs
 waybar
 rofi
-mako
+swaync
+swayosd
+nwg-dock-hyprland
 libnotify
 swww
 kitty
@@ -41,12 +43,17 @@ loupe
 gnome-text-editor
 btop
 fastfetch
+mission-center
+gnome-calculator
+gnome-calendar
 pavucontrol
 blueman
 
-# Login
+# Login screen & boot splash
 greetd
-greetd-tuigreet
+greetd-regreet
+cage
+plymouth
 
 # Audio, network, power, hardware
 pipewire
@@ -76,6 +83,8 @@ base-devel
 # Screenshots & clipboard
 grim
 slurp
+satty
+hyprpicker
 wl-clipboard
 cliphist
 
