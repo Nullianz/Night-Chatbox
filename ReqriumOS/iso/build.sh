@@ -104,6 +104,9 @@ sh "$ROOT/system/hide-apps.sh" "$ROOT/system/hidden-apps.txt" "$A"
 # Everything the disk installer copies onto the new system
 mkdir -p "$A/usr/share/reqriumos"
 cp -r "$ROOT/dotfiles" "$ROOT/system" "$ROOT/packages.txt" "$A/usr/share/reqriumos/"
+# Version stamp (the Git commit this ISO is built from), so installs from it
+# know they are up to date:  sudo REQRIUM_VERSION=$(git rev-parse HEAD) ./iso/build.sh
+[ -n "${REQRIUM_VERSION:-}" ] && echo "$REQRIUM_VERSION" > "$A/usr/share/reqriumos/VERSION"
 
 # --- build ----------------------------------------------------------------------
 echo "◈ Building ISO (this takes a while)"
