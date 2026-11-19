@@ -277,9 +277,9 @@ class SettingsWindow(Adw.ApplicationWindow):
         return self.page(g, p)
 
     def restart_bars(self):
-        ui.run(["pkill", "waybar"], wait=True)
-        ui.run(["waybar"])
+        ui.run([os.path.join(ui.SCRIPTS, "panel.sh"), "restart"])
         if self.s["dock"]:
+            ui.run(["pkill", "-f", "waybar -c .*dock.jsonc"], wait=True)
             ui.run([os.path.join(ui.SCRIPTS, "dock.sh")])
         self.toast("Panel restarted")
 

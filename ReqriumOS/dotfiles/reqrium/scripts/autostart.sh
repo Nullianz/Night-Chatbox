@@ -29,11 +29,5 @@ fi 2>/dev/null
 # Check for updates now, then every 30 minutes (shown on the panel)
 ~/.config/reqrium/scripts/updates.sh watch >"$LOGS/updates.log" 2>&1 &
 
-# the panel: if it exits within 20 seconds, try again (up to 5 times)
-for attempt in 1 2 3 4 5; do
-  start=$(date +%s)
-  waybar >"$LOGS/waybar.log" 2>&1
-  [ $(( $(date +%s) - start )) -ge 20 ] && break
-  echo "panel exited early (attempt $attempt), restarting" >>"$LOGS/autostart.log"
-  sleep 1
-done
+# the top panel (kept alive if it dies right after starting)
+~/.config/reqrium/scripts/panel.sh

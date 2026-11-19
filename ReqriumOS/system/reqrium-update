@@ -48,8 +48,11 @@ if [ -n "$new" ] && [ "$new" != "$(installed)" ]; then
     sudo env REQRIUM_VERSION="$new" bash "$tmp/src/ReqriumOS/system/reqrium-configure" \
       --src "$tmp/src/ReqriumOS" --user "$USER" --update
     hyprctl reload >/dev/null 2>&1 || true
-    pkill waybar; (setsid waybar >/dev/null 2>&1 &)
-    (setsid "$HOME/.config/reqrium/scripts/dock.sh" >/dev/null 2>&1 &)
+    # restart the panel and dock with the new version (each waits for the old one)
+    setsid "$HOME/.config/reqrium/scripts/panel.sh" restart </dev/null >/dev/null 2>&1 &
+    pkill -f "waybar -c .*dock.jsonc"
+    for _ in $(seq 1 50); do pgrep -f "waybar -c .*dock.jsonc" >/dev/null || break; sleep 0.1; done
+    setsid "$HOME/.config/reqrium/scripts/dock.sh" </dev/null >/dev/null 2>&1 &
   else
     echo "Could not download ReqriumOS from $REPO ($BRANCH)." >&2
   fi
