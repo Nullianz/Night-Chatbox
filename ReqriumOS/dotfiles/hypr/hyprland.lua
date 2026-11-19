@@ -43,8 +43,7 @@ hl.monitor({ output = "", mode = "preferred", position = "auto", scale = "auto" 
 ---- AUTOSTART ----
 -------------------
 hl.on("hyprland.start", function()
-    hl.exec_cmd(scripts .. "/wallpaper.sh init")
-    hl.exec_cmd("waybar")
+    hl.exec_cmd(scripts .. "/autostart.sh")    -- wallpaper + top panel, once Hyprland is ready
     hl.exec_cmd("swaync")                      -- Control Center + notifications
     hl.exec_cmd("swayosd-server")              -- glass volume/brightness pop-ups
     if reqrium.dock ~= false then hl.exec_cmd(scripts .. "/dock.sh") end   -- glass dock
