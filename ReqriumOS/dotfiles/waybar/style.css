@@ -104,6 +104,17 @@ window#waybar.empty #window { padding: 0; margin: 0; }
 
 #custom-notification { font-size: 15px; }
 
+/* the updates badge only appears when something is waiting */
+#custom-updates {
+    color: #0b0a1f;
+    font-weight: 700;
+    background: linear-gradient(90deg, #c4b5fd, #7dd3fc);
+    border-radius: 15px;
+    padding: 2px 12px;
+    margin: 5px 0;
+    box-shadow: 0 0 12px rgba(125, 211, 252, 0.45);
+}
+
 #custom-power {
     margin-right: 6px;
     color: #fda4af;

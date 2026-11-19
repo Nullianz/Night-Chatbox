@@ -43,6 +43,8 @@ gnome-text-editor
 btop
 fastfetch
 mission-center
+gnome-software
+pacman-contrib
 gnome-calculator
 gnome-calendar
 pavucontrol
@@ -99,6 +101,7 @@ qt5-wayland
 qt6-wayland
 adw-gtk-theme
 papirus-icon-theme
+capitaine-cursors
 nwg-look
 inter-font
 ttf-jetbrains-mono-nerd

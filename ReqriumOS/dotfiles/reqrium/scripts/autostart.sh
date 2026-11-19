@@ -11,6 +11,24 @@ for _ in $(seq 1 150); do hyprctl monitors >/dev/null 2>&1 && break; sleep 0.2; 
 
 ~/.config/reqrium/scripts/wallpaper.sh init >"$LOGS/wallpaper.log" 2>&1 &
 
+# Dark glass for every app. GTK3 apps on Wayland (file dialogs, the network
+# editor...) read these settings, not the gtk-3.0/settings.ini file.
+if command -v gsettings >/dev/null; then
+  gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
+  gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3-dark'
+  gsettings set org.gnome.desktop.interface icon-theme 'Papirus-Dark'
+  gsettings set org.gnome.desktop.interface cursor-theme 'capitaine-cursors-light'
+  gsettings set org.gnome.desktop.interface cursor-size 24
+  gsettings set org.gnome.desktop.interface font-name 'Inter 11'
+  gsettings set org.gnome.desktop.interface monospace-font-name 'JetBrainsMono Nerd Font 11'
+fi 2>/dev/null
+
+# Login chime (Settings → Sound can turn it off)
+~/.config/reqrium/scripts/sound.sh login &
+
+# Check for updates now, then every 30 minutes (shown on the panel)
+~/.config/reqrium/scripts/updates.sh watch >"$LOGS/updates.log" 2>&1 &
+
 # the panel: if it exits within 20 seconds, try again (up to 5 times)
 for attempt in 1 2 3 4 5; do
   start=$(date +%s)

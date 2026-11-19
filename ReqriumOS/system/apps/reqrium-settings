@@ -239,7 +239,18 @@ class SettingsWindow(Adw.ApplicationWindow):
                               "wobble", "Window wobble updated"))
         g.add(self.switch_row("Motion blur", "Moving windows leave a soft blur trail",
                               "motion_blur", "Motion blur updated"))
-        return self.page(g)
+
+        game = Adw.PreferencesGroup(title="Gaming mode",
+                                    description="Also in the Control Center (SUPER + N).")
+        gm = Adw.SwitchRow(title="Gaming mode",
+                           subtitle="Turns off blur, shadows and animations and uses "
+                                    "performance mode, for the most FPS")
+        script = os.path.join(ui.SCRIPTS, "gaming-mode.sh")
+        gm.set_active(ui.run([script, "status"], wait=True).strip() == "true")
+        gm.connect("notify::active",
+                   lambda r, _p: ui.run([script, "on" if r.get_active() else "off"]))
+        game.add(gm)
+        return self.page(g, game)
 
     # --------------------------------------------------------------- dock --
     def page_dock(self):
@@ -295,14 +306,30 @@ class SettingsWindow(Adw.ApplicationWindow):
 
     # ------------------------------------------------------------ network --
     def page_network(self):
-        g = Adw.PreferencesGroup(title="Wi-Fi")
-        wifi = Adw.SwitchRow(title="Wi-Fi")
-        wifi.set_active("enabled" in ui.run(["nmcli", "radio", "wifi"], wait=True))
-        wifi.connect("notify::active",
-                     lambda r, _p: ui.run(["nmcli", "radio", "wifi", "on" if r.get_active() else "off"]))
-        g.add(wifi)
-        g.add(row_with_button("Networks", "Join Wi-Fi, VPN and wired connections", "Open",
-                              lambda: ui.run(["nm-connection-editor"])))
+        wifi_group = Adw.PreferencesGroup(title="Wi-Fi")
+        self.wifi_switch = Adw.SwitchRow(title="Wi-Fi")
+        self.wifi_switch.set_active("enabled" in ui.run(["nmcli", "radio", "wifi"], wait=True))
+        self.wifi_switch.connect("notify::active", self.on_wifi_switch)
+        wifi_group.add(self.wifi_switch)
+
+        self.networks = Adw.PreferencesGroup(title="Networks",
+                                             description="Click a network to connect.")
+        self.spinner = Adw.Spinner(visible=False)
+        refresh = Gtk.Button(icon_name="view-refresh-symbolic", tooltip_text="Scan again",
+                             valign=Gtk.Align.CENTER)
+        refresh.add_css_class("flat")
+        refresh.connect("clicked", lambda *_: self.scan_wifi(rescan=True))
+        suffix = Gtk.Box(spacing=6)
+        suffix.append(self.spinner)
+        suffix.append(refresh)
+        self.networks.set_header_suffix(suffix)
+        self.network_rows = []
+
+        more = Adw.PreferencesGroup()
+        more.add(row_with_button("Advanced network settings",
+                                 "Wired, VPN, hidden networks and fixed IP addresses", "Open",
+                                 lambda: ui.run(["nm-connection-editor"])))
+
         b = Adw.PreferencesGroup(title="Bluetooth")
         bt = Adw.SwitchRow(title="Bluetooth")
         bt.set_active("Powered: yes" in ui.run(["bluetoothctl", "show"], wait=True))
@@ -311,7 +338,142 @@ class SettingsWindow(Adw.ApplicationWindow):
         b.add(bt)
         b.add(row_with_button("Devices", "Pair headphones, mice, keyboards and phones", "Open",
                               lambda: ui.run(["blueman-manager"])))
-        return self.page(g, b)
+        self.scan_wifi(rescan=False)
+        return self.page(wifi_group, self.networks, more, b)
+
+    def nmcli(self, args, callback):
+        """Run nmcli without freezing the window; callback(ok, stdout, stderr)."""
+        try:
+            proc = Gio.Subprocess.new(["nmcli"] + args, Gio.SubprocessFlags.STDOUT_PIPE
+                                      | Gio.SubprocessFlags.STDERR_PIPE)
+        except GLib.Error as e:
+            callback(False, "", e.message)
+            return
+
+        def done(p, res):
+            try:
+                _ok, out, err = p.communicate_utf8_finish(res)
+            except GLib.Error as e:
+                out, err = "", e.message
+            callback(p.get_successful(), out or "", err or "")
+        proc.communicate_utf8_async(None, None, done)
+
+    def on_wifi_switch(self, row, _p):
+        on = row.get_active()
+        self.nmcli(["radio", "wifi", "on" if on else "off"],
+                   lambda *_: GLib.timeout_add(1500, lambda: (self.scan_wifi(True), False)[1]))
+
+    def scan_wifi(self, rescan=True):
+        self.spinner.set_visible(True)
+        self.nmcli(["-t", "-f", "IN-USE,SSID,SIGNAL,SECURITY", "device", "wifi", "list",
+                    "--rescan", "yes" if rescan else "auto"], self.show_networks)
+
+    def show_networks(self, ok, out, err):
+        self.spinner.set_visible(False)
+        for r in self.network_rows:
+            self.networks.remove(r)
+        self.network_rows = []
+        best = {}
+        for line in out.splitlines():
+            # terse output: fields split by ':' (a literal ':' is written as '\:')
+            parts = [f.replace("\\:", ":") for f in re.split(r"(?<!\\):", line)]
+            if len(parts) < 4 or not parts[1]:
+                continue
+            in_use, ssid, signal, security = parts[0] == "*", parts[1], parts[2], parts[3]
+            signal = int(signal) if signal.isdigit() else 0
+            # one row per network name: keep the connected one, else the strongest
+            prev = best.get(ssid)
+            if prev is None or in_use or (not prev[0] and signal > prev[1]):
+                best[ssid] = (in_use, signal, security)
+        if not best:
+            msg = "Wi-Fi is off" if not self.wifi_switch.get_active() else \
+                ("No networks found" if ok else "Can't scan for networks")
+            row = Adw.ActionRow(title=msg)
+            row.add_css_class("dim")
+            self.networks.add(row)
+            self.network_rows.append(row)
+            return
+        for ssid, (in_use, signal, security) in sorted(best.items(),
+                                                       key=lambda kv: (not kv[1][0], -kv[1][1])):
+            secured = bool(security) and security != "--"
+            level = ("excellent" if signal >= 75 else "good" if signal >= 50 else
+                     "ok" if signal >= 25 else "weak")
+            row = Adw.ActionRow(title=GLib.markup_escape_text(ssid),
+                                subtitle="Connected" if in_use else
+                                ("Secured" if secured else "Open"),
+                                activatable=not in_use)
+            row.add_prefix(Gtk.Image.new_from_icon_name(f"network-wireless-signal-{level}-symbolic"))
+            if secured:
+                row.add_suffix(Gtk.Image.new_from_icon_name("channel-secure-symbolic"))
+            if in_use:
+                row.add_suffix(Gtk.Image.new_from_icon_name("object-select-symbolic"))
+                off = Gtk.Button(label="Disconnect", valign=Gtk.Align.CENTER)
+                off.add_css_class("pill")
+                off.connect("clicked", lambda *_: self.nmcli(
+                    ["device", "disconnect", self.wifi_device()],
+                    lambda *_: self.scan_wifi(False)))
+                row.add_suffix(off)
+            else:
+                row.connect("activated", self.on_network_clicked, ssid, secured)
+            self.networks.add(row)
+            self.network_rows.append(row)
+
+    def wifi_device(self):
+        out = ui.run(["nmcli", "-t", "-f", "DEVICE,TYPE", "device"], wait=True)
+        for line in out.splitlines():
+            dev, _, kind = line.partition(":")
+            if kind == "wifi":
+                return dev
+        return "wlan0"
+
+    def on_network_clicked(self, _row, ssid, secured):
+        saved = ui.run(["nmcli", "-t", "-f", "NAME,TYPE", "connection", "show"], wait=True)
+        known = any(line.startswith(ssid + ":") and "wireless" in line
+                    for line in saved.splitlines())
+        if secured and not known:
+            self.ask_password(ssid)
+        else:
+            self.connect_wifi(ssid, None)
+
+    def ask_password(self, ssid, retry=False):
+        dialog = Adw.AlertDialog(
+            heading=f"Connect to {ssid}",
+            body=("That password didn't work. Try again." if retry
+                  else "Enter the Wi-Fi password."))
+        entry = Gtk.PasswordEntry(show_peek_icon=True, activates_default=True,
+                                  placeholder_text="Wi-Fi password")
+        dialog.set_extra_child(entry)
+        dialog.add_response("cancel", "Cancel")
+        dialog.add_response("connect", "Connect")
+        dialog.set_response_appearance("connect", Adw.ResponseAppearance.SUGGESTED)
+        dialog.set_default_response("connect")
+
+        def response(_d, res):
+            if res == "connect" and entry.get_text():
+                self.connect_wifi(ssid, entry.get_text())
+        dialog.connect("response", response)
+        dialog.present(self)
+        entry.grab_focus()
+
+    def connect_wifi(self, ssid, password):
+        self.toast(f"Connecting to {ssid}…")
+        self.spinner.set_visible(True)
+        args = ["device", "wifi", "connect", ssid]
+        if password:
+            args += ["password", password]
+
+        def done(ok, _out, err):
+            self.spinner.set_visible(False)
+            if ok:
+                self.toast(f"Connected to {ssid}")
+            elif "secret" in err.lower() or "password" in err.lower() or "802-1x" in err.lower():
+                # forget the half-made profile so the next try starts clean
+                ui.run(["nmcli", "connection", "delete", "id", ssid], wait=True)
+                self.ask_password(ssid, retry=True)
+            else:
+                self.toast(f"Couldn't connect to {ssid}")
+            self.scan_wifi(False)
+        self.nmcli(args, done)
 
     # -------------------------------------------------------------- sound --
     def page_sound(self):
@@ -329,7 +491,15 @@ class SettingsWindow(Adw.ApplicationWindow):
         g.add(row)
         g.add(row_with_button("Sound mixer", "Choose speakers, microphones and per-app volume",
                               "Open", lambda: ui.run(["pavucontrol"])))
-        return self.page(g)
+
+        sys_sounds = Adw.PreferencesGroup(title="System sounds")
+        sys_sounds.add(self.switch_row("Login and notification sounds",
+                                       "A glassy chime when you log in, and a soft tap for "
+                                       "notifications", "sounds", "System sounds updated"))
+        sys_sounds.add(row_with_button("Try them", "Play the login chime", "Play",
+                                       lambda: ui.run([os.path.join(ui.SCRIPTS, "sound.sh"),
+                                                       "login"])))
+        return self.page(g, sys_sounds)
 
     # -------------------------------------------------------------- power --
     def page_power(self):
@@ -384,10 +554,12 @@ class SettingsWindow(Adw.ApplicationWindow):
 
         up = Adw.PreferencesGroup(title="Updates")
         up.add(row_with_button(
-            "Update everything", "System packages, AUR apps and Flatpak apps", "Update",
-            lambda: ui.in_terminal("Updating ReqriumOS",
-                                   "sudo pacman -Syu; command -v paru >/dev/null && paru -Sua; "
-                                   "flatpak update -y")))
+            "Update everything", "System packages, AUR and Flatpak apps, and ReqriumOS itself",
+            "Update", lambda: ui.in_terminal("Updating ReqriumOS", "reqrium-update")))
+        up.add(row_with_button(
+            "Check for updates", "The panel shows a badge when updates are ready", "Check",
+            lambda: (ui.run([os.path.join(ui.SCRIPTS, "updates.sh"), "check"]),
+                     self.toast("Checking for updates…"))))
         up.add(row_with_button("Welcome tour", "Show the welcome app again", "Open",
                                lambda: ui.run(["reqrium-welcome"])))
         return self.page(top, info, up)

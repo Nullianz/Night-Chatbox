@@ -185,11 +185,17 @@ class WelcomeWindow(Adw.ApplicationWindow):
         install.add_css_class("suggested-action")
         install.add_css_class("pill")
         install.connect("clicked", self.install_apps)
+        store = Gtk.Button(label="Browse the App Store", halign=Gtk.Align.CENTER)
+        store.add_css_class("pill")
+        store.connect("clicked", lambda *_: ui.run(["gnome-software"]))
+        buttons = Gtk.Box(spacing=12, halign=Gtk.Align.CENTER)
+        buttons.append(install)
+        buttons.append(store)
         return centered(
             label("Get your apps", "hero-title"),
             label("Tap the ones you want, then Install. They come from Flathub and "
                   "install in the background.", "hero-sub"),
-            flow, install, spacing=16,
+            flow, buttons, spacing=16,
         )
 
     def install_apps(self, _btn):

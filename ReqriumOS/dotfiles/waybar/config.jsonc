@@ -10,7 +10,7 @@
 
     "modules-left":   ["custom/logo", "hyprland/workspaces", "hyprland/window"],
     "modules-center": ["clock"],
-    "modules-right":  ["mpris", "tray", "pulseaudio", "network", "power-profiles-daemon", "battery", "custom/notification", "custom/power"],
+    "modules-right":  ["mpris", "tray", "pulseaudio", "network", "power-profiles-daemon", "battery", "custom/updates", "custom/notification", "custom/power"],
 
     "custom/logo": {
         "format": "◈",
@@ -65,7 +65,7 @@
         "format-ethernet": "󰈀 wired",
         "format-disconnected": "󰖪 offline",
         "tooltip-format": "{ipaddr} via {gwaddr}",
-        "on-click": "nm-connection-editor"
+        "on-click": "reqrium-settings network"
     },
 
     "power-profiles-daemon": {
@@ -83,6 +83,15 @@
         "format": "{icon} {capacity}%",
         "format-charging": "󰂄 {capacity}%",
         "format-icons": ["󰁺", "󰁼", "󰁾", "󰂀", "󰁹"]
+    },
+
+    "custom/updates": {
+        "exec": "~/.config/reqrium/scripts/updates.sh show",
+        "return-type": "json",
+        "signal": 8,
+        "interval": 900,
+        "on-click": "kitty --title 'Updating ReqriumOS' bash -c 'reqrium-update; read -rp \"Press Enter to close \" _'",
+        "on-click-right": "~/.config/reqrium/scripts/updates.sh check"
     },
 
     "custom/notification": {

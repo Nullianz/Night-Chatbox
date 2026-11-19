@@ -60,9 +60,12 @@ end)
 -----------------------
 ---- ENVIRONMENT ------
 -----------------------
+hl.env("XCURSOR_THEME", "capitaine-cursors-light")   -- the ReqriumOS cursor
 hl.env("XCURSOR_SIZE", "24")
+hl.env("HYPRCURSOR_THEME", "capitaine-cursors-light")
 hl.env("HYPRCURSOR_SIZE", "24")
 hl.env("QT_QPA_PLATFORM", "wayland;xcb")
+hl.env("QT_QPA_PLATFORMTHEME", "gtk3")              -- Qt apps follow the dark theme
 hl.env("QT_WAYLAND_DISABLE_WINDOWDECORATION", "1")
 hl.env("GDK_BACKEND", "wayland,x11")
 hl.env("MOZ_ENABLE_WAYLAND", "1")
@@ -301,8 +304,16 @@ hl.bind("XF86AudioPlay", hl.dsp.exec_cmd(osd .. "--playerctl play-pause"), { loc
 hl.bind("XF86AudioNext", hl.dsp.exec_cmd(osd .. "--playerctl next"),       { locked = true })
 hl.bind("XF86AudioPrev", hl.dsp.exec_cmd(osd .. "--playerctl prev"),       { locked = true })
 
--- Choices made in the Settings app (overrides the defaults above)
-pcall(require, "reqrium-settings")
-
--- Extra settings for the live USB (opens the installer); absent elsewhere
-pcall(require, "live")
+-- Extra config files, loaded fresh on every reload (absent files are skipped):
+--   reqrium-settings.lua  choices made in the Settings app
+--   gaming.lua            Gaming mode (written by the gaming-mode script)
+--   live.lua              live USB only (opens the installer)
+local confdir = (os.getenv("XDG_CONFIG_HOME") or (os.getenv("HOME") .. "/.config")) .. "/hypr/"
+for _, name in ipairs({ "reqrium-settings", "gaming", "live" }) do
+    local f = io.open(confdir .. name .. ".lua", "r")
+    if f then
+        f:close()
+        local ok, err = pcall(dofile, confdir .. name .. ".lua")
+        if not ok then hl.notification.create({ text = "ReqriumOS: " .. tostring(err), timeout = 8000 }) end
+    end
+end

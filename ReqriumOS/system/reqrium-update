@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+# Update everything: Arch packages, AUR apps, Flatpak apps, and ReqriumOS
+# itself (the latest version from GitHub).
+#   reqrium-update            update everything (asks for your password)
+#   reqrium-update --check    print "available" if ReqriumOS has a new version
+#
+# First time on an older install, run:
+#   bash <(curl -fsSL https://raw.githubusercontent.com/Nullianz/Night-Chatbox/ccr-ef02da04-1pkdff/ReqriumOS/system/reqrium-update)
+set -uo pipefail
+
+CONF=/etc/reqriumos/update.conf
+REPO="https://github.com/Nullianz/Night-Chatbox"
+BRANCH="ccr-ef02da04-1pkdff"
+# shellcheck source=/dev/null
+[ -f "$CONF" ] && . "$CONF"
+VERSION_FILE=/usr/share/reqriumos/VERSION
+
+say() { printf '\033[1;38;5;117m◈ %s\033[0m\n' "$*"; }
+latest() { git ls-remote "$REPO" "refs/heads/$BRANCH" 2>/dev/null | cut -f1; }
+installed() { cat "$VERSION_FILE" 2>/dev/null || echo unknown; }
+
+if [ "${1:-}" = "--check" ]; then
+  new="$(latest)"
+  [ -n "$new" ] && [ "$new" != "$(installed)" ] && echo available || echo current
+  exit 0
+fi
+
+[ "$(id -u)" -eq 0 ] && { echo "Run this as your normal user (it uses sudo when needed)." >&2; exit 1; }
+
+say "Updating system packages"
+sudo pacman -Syu || { echo "System update failed; stopping." >&2; exit 1; }
+
+if command -v paru >/dev/null; then
+  say "Updating AUR apps"
+  paru -Sua || true
+fi
+
+if command -v flatpak >/dev/null; then
+  say "Updating Flatpak apps"
+  flatpak update -y || true
+fi
+
+new="$(latest)"
+if [ -n "$new" ] && [ "$new" != "$(installed)" ]; then
+  say "Updating ReqriumOS to the latest version"
+  tmp="$(mktemp -d)"
+  if git clone --depth 1 --branch "$BRANCH" "$REPO" "$tmp/src"; then
+    sudo env REQRIUM_VERSION="$new" bash "$tmp/src/ReqriumOS/system/reqrium-configure" \
+      --src "$tmp/src/ReqriumOS" --user "$USER" --update
+    hyprctl reload >/dev/null 2>&1 || true
+    pkill waybar; (setsid waybar >/dev/null 2>&1 &)
+    (setsid "$HOME/.config/reqrium/scripts/dock.sh" >/dev/null 2>&1 &)
+  else
+    echo "Could not download ReqriumOS from $REPO ($BRANCH)." >&2
+  fi
+  rm -rf "$tmp"
+else
+  say "ReqriumOS is up to date"
+fi
+
+"$HOME/.config/reqrium/scripts/updates.sh" check >/dev/null 2>&1 || true
+say "All done"

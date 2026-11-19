@@ -13,6 +13,7 @@ SRC=/usr/share/reqriumos
 USER_NAME=""
 EXTRAS=""
 AUR=1
+UPDATE=0
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -20,6 +21,7 @@ while [ $# -gt 0 ]; do
     --user)   USER_NAME="$2"; shift 2 ;;
     --extras) EXTRAS="$2"; shift 2 ;;
     --no-aur) AUR=0; shift ;;
+    --update) UPDATE=1; shift ;;   # applying a newer ReqriumOS (keeps your settings)
     *) echo "unknown option: $1" >&2; exit 2 ;;
   esac
 done
@@ -112,6 +114,19 @@ install -Dm644 "$SRC/system/os-release"        /etc/os-release
 install -Dm644 "$SRC/system/mimeapps.list"     /etc/xdg/mimeapps.list
 install -Dm644 "$SRC/system/zram-generator.conf" /etc/systemd/zram-generator.conf
 install -Dm755 "$SRC/system/reqrium-session"   /usr/local/bin/reqrium-session
+install -Dm755 "$SRC/system/reqrium-update"    /usr/local/bin/reqrium-update
+[ -f /etc/reqriumos/update.conf ] || install -Dm644 "$SRC/system/update.conf" /etc/reqriumos/update.conf
+install -Dm644 -t /usr/share/sounds/reqriumos "$SRC"/system/sounds/*.wav
+
+# Keep an up-to-date copy of ReqriumOS on the system (used by updates), and
+# remember which version this is
+if [ "$(realpath "$SRC")" != /usr/share/reqriumos ]; then
+  rm -rf /usr/share/reqriumos.new
+  cp -r "$SRC" /usr/share/reqriumos.new
+  rm -rf /usr/share/reqriumos
+  mv /usr/share/reqriumos.new /usr/share/reqriumos
+fi
+[ -n "${REQRIUM_VERSION:-}" ] && echo "$REQRIUM_VERSION" > /usr/share/reqriumos/VERSION
 install -Dm644 "$SRC/system/reqrium.desktop"   /usr/share/wayland-sessions/reqrium.desktop
 
 # The ReqriumOS apps: Welcome and Settings
@@ -223,6 +238,17 @@ if [ -n "$USER_NAME" ]; then
     fi
     cp -r "$d" "$home/.config/$name"
   done
+  # Keep your own choices across ReqriumOS updates
+  if [ -d "$backup" ]; then
+    for keep in reqrium/settings.json reqrium/welcome-done hypr/reqrium-settings.lua hypr/gaming.lua; do
+      [ -e "$backup/$keep" ] && cp -a "$backup/$keep" "$home/.config/$keep"
+    done
+    [ -d "$backup/reqrium/wallpapers" ] && \
+      cp -an "$backup/reqrium/wallpapers/." "$home/.config/reqrium/wallpapers/"
+    # the keyboard layout chosen in the installer lives in hyprland.lua
+    old_kb="$(grep -o 'kb_layout = "[^"]*"' "$backup/hypr/hyprland.lua" 2>/dev/null | head -n1)"
+    [ -n "$old_kb" ] && sed -i "s/kb_layout = \"[^\"]*\"/$old_kb/" "$home/.config/hypr/hyprland.lua"
+  fi
   chmod +x "$home/.config/reqrium/scripts/"*.sh
   chown -R "$USER_NAME:" "$home/.config"
   [ -d "$backup" ] && chown -R "$USER_NAME:" "$backup" && say "Old configs saved in $backup"
@@ -243,4 +269,8 @@ if [ "$AUR" = 1 ] && [ -n "$USER_NAME" ] && ! command -v paru >/dev/null; then
   rm -rf "$build"
 fi
 
-say "ReqriumOS configuration complete"
+if [ "$UPDATE" = 1 ]; then
+  say "ReqriumOS updated to the latest version. Your settings were kept."
+else
+  say "ReqriumOS configuration complete"
+fi

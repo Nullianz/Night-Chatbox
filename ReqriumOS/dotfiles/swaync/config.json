@@ -26,14 +26,39 @@
   "hide-on-clear": false,
   "hide-on-action": true,
   "text-empty": "You're all caught up ✦",
-  "widgets": ["title", "buttons-grid", "volume", "backlight", "mpris", "dnd", "notifications"],
+  "widgets": [
+    "title",
+    "buttons-grid",
+    "volume",
+    "backlight",
+    "mpris",
+    "dnd",
+    "notifications"
+  ],
   "widget-config": {
-    "title": { "text": "Control Center", "clear-all-button": true, "button-text": "Clear" },
-    "dnd": { "text": "Do Not Disturb" },
-    "notifications": { "vexpand": true },
-    "volume": { "label": "󰕾", "show-per-app": false },
-    "backlight": { "label": "󰃟", "device": "intel_backlight" },
-    "mpris": { "show-album-art": "when-available", "autohide": true },
+    "title": {
+      "text": "Control Center",
+      "clear-all-button": true,
+      "button-text": "Clear"
+    },
+    "dnd": {
+      "text": "Do Not Disturb"
+    },
+    "notifications": {
+      "vexpand": true
+    },
+    "volume": {
+      "label": "󰕾",
+      "show-per-app": false
+    },
+    "backlight": {
+      "label": "󰃟",
+      "device": "intel_backlight"
+    },
+    "mpris": {
+      "show-album-art": "when-available",
+      "autohide": true
+    },
     "buttons-grid": {
       "buttons-per-row": 4,
       "actions": [
@@ -43,6 +68,10 @@
           "active": true,
           "command": "sh -c '[ \"$SWAYNC_TOGGLE_STATE\" = true ] && nmcli radio wifi on || nmcli radio wifi off'",
           "update-command": "sh -c '[ \"$(nmcli radio wifi)\" = enabled ] && echo true || echo false'"
+        },
+        {
+          "label": "󰤨",
+          "command": "sh -c 'swaync-client -cp; reqrium-settings network'"
         },
         {
           "label": "󰂯",
@@ -56,15 +85,46 @@
           "command": "sh -c '[ \"$SWAYNC_TOGGLE_STATE\" = true ] && powerprofilesctl set power-saver || powerprofilesctl set balanced'",
           "update-command": "sh -c '[ \"$(powerprofilesctl get)\" = power-saver ] && echo true || echo false'"
         },
-        { "label": "󰍬", "type": "toggle",
+        {
+          "label": "󰊴",
+          "type": "toggle",
+          "command": "sh -c '~/.config/reqrium/scripts/gaming-mode.sh toggle'",
+          "update-command": "sh -c '~/.config/reqrium/scripts/gaming-mode.sh status'"
+        },
+        {
+          "label": "󰍬",
+          "type": "toggle",
           "command": "sh -c 'wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle'",
-          "update-command": "sh -c 'wpctl get-volume @DEFAULT_AUDIO_SOURCE@ | grep -q MUTED && echo true || echo false'" },
-        { "label": "󰹑", "command": "sh -c 'swaync-client -cp; sleep 0.4; ~/.config/reqrium/scripts/screenshot.sh region'" },
-        { "label": "󰈋", "command": "sh -c 'swaync-client -cp; hyprpicker -a'" },
-        { "label": "󰸉", "command": "sh -c '~/.config/reqrium/scripts/wallpaper.sh next'" },
-        { "label": "", "command": "sh -c 'swaync-client -cp; reqrium-settings'" },
-        { "label": "⏻", "command": "sh -c 'swaync-client -cp; ~/.config/reqrium/scripts/powermenu.sh'" }
+          "update-command": "sh -c 'wpctl get-volume @DEFAULT_AUDIO_SOURCE@ | grep -q MUTED && echo true || echo false'"
+        },
+        {
+          "label": "󰹑",
+          "command": "sh -c 'swaync-client -cp; sleep 0.4; ~/.config/reqrium/scripts/screenshot.sh region'"
+        },
+        {
+          "label": "󰈋",
+          "command": "sh -c 'swaync-client -cp; hyprpicker -a'"
+        },
+        {
+          "label": "󰸉",
+          "command": "sh -c '~/.config/reqrium/scripts/wallpaper.sh next'"
+        },
+        {
+          "label": "",
+          "command": "sh -c 'swaync-client -cp; reqrium-settings'"
+        },
+        {
+          "label": "⏻",
+          "command": "sh -c 'swaync-client -cp; ~/.config/reqrium/scripts/powermenu.sh'"
+        }
       ]
     }
-  }
+  },
+  "scripts": {
+    "notification-sound": {
+      "exec": "sh -c '~/.config/reqrium/scripts/sound.sh notify'",
+      "app-name": ".*"
+    }
+  },
+  "script-fail-notify": false
 }

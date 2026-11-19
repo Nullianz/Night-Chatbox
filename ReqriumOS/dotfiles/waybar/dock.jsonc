@@ -10,7 +10,7 @@
 
     "modules-center": [
         "custom/apps",
-        "custom/firefox", "custom/files", "custom/terminal", "custom/monitor", "custom/editor", "custom/settings",
+        "custom/firefox", "custom/files", "custom/terminal", "custom/store", "custom/monitor", "custom/editor", "custom/settings",
         "wlr/taskbar"
     ],
 
@@ -19,6 +19,7 @@
     "custom/firefox":  { "format": "󰈹", "tooltip-format": "Firefox",       "on-click": "firefox" },
     "custom/files":    { "format": "󰉋", "tooltip-format": "Files",         "on-click": "thunar" },
     "custom/terminal": { "format": "", "tooltip-format": "Terminal",      "on-click": "kitty" },
+    "custom/store":    { "format": "󰏓", "tooltip-format": "App Store",     "on-click": "gnome-software" },
     "custom/monitor":  { "format": "󰓅", "tooltip-format": "Mission Center", "on-click": "missioncenter" },
     "custom/editor":   { "format": "󰷈", "tooltip-format": "Text Editor",   "on-click": "gnome-text-editor" },
     "custom/settings": { "format": "", "tooltip-format": "Settings",      "on-click": "reqrium-settings" },

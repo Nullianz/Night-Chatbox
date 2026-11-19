@@ -31,6 +31,7 @@ DEFAULTS = {
     "scale": "auto",
     "kb_layout": "",
     "show_welcome": True,
+    "sounds": True,
 }
 
 # Hyprland's blur.variant numbers
@@ -110,6 +111,15 @@ button.glass:checked {
 .app-tile { padding: 14px 8px; border-radius: 20px; }
 .app-tile label.title { font-weight: 700; }
 .dim { opacity: 0.65; }
+/* dialogs (e.g. the Wi-Fi password) are more solid glass so text stays readable */
+dialog floating-sheet, dialog floating-sheet > sheet {
+  background-color: rgba(24, 20, 58, 0.96);
+}
+dialog.alert floating-sheet, dialog floating-sheet {
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 24px;
+  box-shadow: 0 18px 50px rgba(5, 3, 26, 0.6);
+}
 """
 
 

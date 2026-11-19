@@ -20,7 +20,7 @@ window#waybar.dock {
 
 /* app buttons: each a little tinted tile that lifts on hover */
 #custom-apps, #custom-firefox, #custom-files, #custom-terminal,
-#custom-monitor, #custom-editor, #custom-settings {
+#custom-store, #custom-monitor, #custom-editor, #custom-settings {
     font-size: 26px;
     padding: 0 14px;
     margin: 4px 2px;
@@ -29,7 +29,7 @@ window#waybar.dock {
     transition: all 320ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 #custom-apps:hover, #custom-firefox:hover, #custom-files:hover, #custom-terminal:hover,
-#custom-monitor:hover, #custom-editor:hover, #custom-settings:hover {
+#custom-store:hover, #custom-monitor:hover, #custom-editor:hover, #custom-settings:hover {
     background: rgba(255, 255, 255, 0.22);
     box-shadow: 0 0 18px rgba(125, 211, 252, 0.5);
     margin-bottom: 10px;            /* bounce up */
@@ -42,6 +42,7 @@ window#waybar.dock {
 #custom-monitor  { color: #6ee7b7; }
 #custom-editor   { color: #f0abfc; }
 #custom-settings { color: #fcd34d; }
+#custom-store    { color: #93c5fd; }
 
 /* running apps, separated from the pinned ones by a thin glass line */
 #taskbar {
